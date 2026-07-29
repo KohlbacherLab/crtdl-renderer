@@ -19,15 +19,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install
         run: pip install -e ".[all]"
-      - name: Self-checks
+      - name: Unit checks
         run: python tests/test_renderer.py
-      - name: Render every example in every format
-        run: |
-          mkdir -p out
-          for f in examples/*.json examples/upstream/*/*.json; do
-            crtdl-render "$f" -f all -o out/ > /dev/null || { echo "FAILED: $f"; exit 1; }
-          done
-          echo "rendered $(ls out | wc -l) files"
+      - name: End-to-end checks
+        run: pip install pypdf && python tests/test_e2e.py
 
   build:
     runs-on: ubuntu-latest

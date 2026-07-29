@@ -1,6 +1,6 @@
 [project]
 name = "crtdl-renderer"
-version = "1.0.0"
+version = "1.1.0"
 description = "Renders MII/FDPG feasibility queries (CRTDL/CCDL) as readable German documents — Markdown, DOCX, PDF, CSV"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -46,3 +46,15 @@ crtdl_renderer = ["terminology_de.json"]
 [tool.ruff]
 line-length = 96
 target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = [
+    "E501",    # long lines are checked by the formatter, not here
+    "RUF001",  # German typography uses „quotes" and – dashes deliberately
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]  # sys.path is set before importing the package under test

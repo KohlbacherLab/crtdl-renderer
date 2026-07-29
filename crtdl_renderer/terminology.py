@@ -58,8 +58,13 @@ class Resolver:
                  tx_base: str = "https://tx.fhir.org/r4"):
         """`cache_path` is an *additional* cache (e.g. a bulk FDPG-ontology
         import via `python -m crtdl_renderer.ontology`); the packaged curated
-        entries are layered on top of it and win on conflict."""
-        self.cache_path = DEFAULT_CACHE
+        entries are layered on top of it and win on conflict.
+
+        Online lookups are written back to `cache_path` when one was given, and
+        are otherwise kept in memory only — never merged into the packaged
+        curated file, which is shipped content rather than a scratch area.
+        """
+        self.cache_path = Path(cache_path) if cache_path else None
         self.online = online
         self.tx_base = tx_base
         self._dirty = False
@@ -142,14 +147,14 @@ class Resolver:
             req = urllib.request.Request(url, headers={"Accept": "application/fhir+json"})
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.load(resp)
-        except Exception:
+        except Exception:  # any network or parse failure simply means "no answer"
             return None
         display = None
         for p in data.get("parameter", []):
             if p.get("name") == "display":
                 display = p.get("valueString")
             if (p.get("name") == "designation"):
-                lang = use = value = None
+                lang = value = None
                 for part in p.get("part", []):
                     if part.get("name") == "language":
                         lang = part.get("valueCode")
@@ -160,7 +165,8 @@ class Resolver:
         return display
 
     def save_cache(self) -> None:
-        if self._dirty:
+        """Persist online lookups, if there is a caller-supplied cache to hold them."""
+        if self._dirty and self.cache_path:
             self.cache_path.write_text(
                 json.dumps(self.cache, ensure_ascii=False, indent=2, sort_keys=True),
                 encoding="utf-8")

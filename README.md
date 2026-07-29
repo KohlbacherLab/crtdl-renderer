@@ -42,7 +42,7 @@ turn contains `E4r1a` / `E4r1b` joined by ODER:
   <img src="examples/rendered/preview-nested.png" alt="Three levels of nesting: criterion, reference condition, referenced criteria" width="620">
 </p>
 
-See [docs/layout.md](docs/layout.md) for why the layout looks like this and what it replaced.
+See [docs/layout.md](docs/layout.md) for the layout's design rules.
 
 ## Usage
 
@@ -57,7 +57,7 @@ crtdl-render FILE [-f md|docx|pdf|csv|all] [-o OUTDIR]
 | `--layout cards` | nested blocks (default) |
 | `--layout table` | flat grid, if a reader prefers one |
 | `--cache PATH` | additional terminology cache (see below) |
-| `--online` | look up missing German names via FHIR `$lookup`, cache the result |
+| `--online` | look up missing German names via FHIR `$lookup`; results persist only if `--cache` names a file |
 
 ## German display names
 
@@ -80,6 +80,11 @@ German is `display.de || display.original`, never `de` alone, because BfArM syst
 (ICD-10-GM, OPS, ATC, Alpha-ID) are natively German and leave `de` empty.
 See [docs/terminology.md](docs/terminology.md).
 
+Each document ends with a **Kodiersysteme** appendix listing every code system used with its
+full URI and versions, so the short labels in the criteria (`ICD-10-GM`) remain traceable to the
+exact system in the export — and a warning marks any short label that stands for more than one
+URI.
+
 ## Semantics
 
 `inclusionCriteria` is CNF (outer AND of inner ORs); `exclusionCriteria` is DNF (outer OR of
@@ -90,7 +95,7 @@ its own rule out in words. Full notes in [docs/format.md](docs/format.md).
 ## Documentation
 
 - [docs/format.md](docs/format.md) — CRTDL/CCDL structure, boolean semantics, tolerated deviations
-- [docs/layout.md](docs/layout.md) — the rendering design and the evidence behind it
+- [docs/layout.md](docs/layout.md) — the rendering design and its rules
 - [docs/terminology.md](docs/terminology.md) — German display resolution and the ontology import
 
 ## Development

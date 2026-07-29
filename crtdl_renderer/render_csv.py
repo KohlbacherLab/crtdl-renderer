@@ -30,8 +30,15 @@ import csv
 from pathlib import Path
 
 from .model import CriteriaBlock, Query
-from .render import (_criterion_constraints, _de_date, _letter, block_prefix,
-                     group_attributes, group_filters, group_names, group_title)
+from .render import (
+    _criterion_constraints,
+    _de_date,
+    _letter,
+    block_prefix,
+    group_filters,
+    group_names,
+    group_title,
+)
 
 # Column names verbatim from CsvMessages_de.properties, except column 1 (see above).
 CRITERIA_HEAD = ["Kontext", "Anzeige", "System", "Code", "Version",

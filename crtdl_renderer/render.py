@@ -11,10 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Format-agnostic row building + Markdown rendering.
+"""Format-agnostic document model plus the Markdown renderer.
 
-All renderers (MD/DOCX/PDF) consume the same flat row list; the boolean
-hierarchy is expressed via `indent` and the `connector` column.
+Every output format builds from the same two views of a criteria block:
+`criteria_cards()` for the nested block layout and `block_rows()` for the flat
+table layout. Both carry the boolean structure explicitly, so the renderers do
+not reimplement it.
 """
 from __future__ import annotations
 
@@ -23,7 +25,7 @@ from datetime import date
 
 from .model import COMPARATORS, CriteriaBlock, Criterion, Query, Unit, ValueFilter
 
-# ponytail: tiny UCUM→German map for units that arrive without a display
+# German rendering for UCUM codes that are unreadable as-is
 UCUM_DE = {"a": "Jahr(e)", "mo": "Monat(e)", "wk": "Woche(n)", "d": "Tag(e)",
            "h": "Stunde(n)", "min": "Minute(n)", "Cel": "°C", "kg": "kg", "cm": "cm"}
 
@@ -31,14 +33,13 @@ UCUM_DE = {"a": "Jahr(e)", "mo": "Monat(e)", "wk": "Woche(n)", "d": "Tag(e)",
 @dataclass
 class Row:
     number: str
-    connector: str
     text: str
     constraints: list[str] = field(default_factory=list)
     indent: int = 0
     is_header: bool = False  # group/reference header, not a criterion itself
 
 
-def _num(x: float | int | None) -> str:
+def _num(x: float | None) -> str:
     if x is None:
         return "?"
     if isinstance(x, int):  # float() would overflow on very large JSON integers
@@ -58,13 +59,43 @@ def _de_date(value: str | None) -> str:
     return value
 
 
-def _unit(u: Unit | None) -> str:
+def _same_unit(display: str, code: str) -> bool:
+    """UCUM treats `L` and `l` as the same litre symbol, so `mg/dl` and `mg/dL`
+    denote one unit. Anything else that differs is a real disagreement."""
+    return display.strip().lower() == code.strip().lower()
+
+
+def unit_label(u: Unit | None) -> tuple[str, str | None]:
+    """Return (label, warning).
+
+    The UCUM `code` is authoritative; `display` is free text that nothing
+    validates. A file whose code says `mg/dL` while its display says `g/dL` is
+    out by a factor of 1000, and printing the display would silently misstate a
+    laboratory threshold. So the code wins and the disagreement is reported.
+    """
     if not u:
-        return ""
-    # A display equal to the bare UCUM code ("a") is no better than the code —
-    # prefer the German word in that case.
-    label = u.display if u.display and u.display != u.code else UCUM_DE.get(u.code, u.display or u.code)
-    return f" {label}"
+        return "", None
+    code, disp = (u.code or "").strip(), (u.display or "").strip()
+    if code in UCUM_DE:            # curated German rendering of a known code
+        return UCUM_DE[code], None
+    if not code:
+        return disp, None
+    if not disp or _same_unit(disp, code):
+        return code, None
+    return code, (f"⚠ Einheit im Export widersprüchlich: UCUM-Code „{code}“, "
+                  f"Bezeichnung „{disp}“ — dargestellt wird der Code.")
+
+
+def _unit(u: Unit | None) -> str:
+    label, _ = unit_label(u)
+    return f" {label}" if label else ""
+
+
+def _unit_warnings(vf: ValueFilter | None) -> list[str]:
+    if not vf:
+        return []
+    _, warning = unit_label(vf.unit)
+    return [warning] if warning else []
 
 
 def _value_filter_text(vf: ValueFilter) -> str:
@@ -92,11 +123,13 @@ def _criterion_constraints(c: Criterion) -> list[str]:
         lines.append(f"Synonyme Codes: {syn}")
     if c.value_filter:
         lines.append(f"Wert: {_value_filter_text(c.value_filter)}")
+        lines += _unit_warnings(c.value_filter)
     for af in c.attribute_filters:
         if af.kind == "reference":
             continue  # rendered as nested rows
         name = af.attribute.display if af.attribute else "Attribut"
         lines.append(f"{name}: {_value_filter_text(af.value)}" if af.value else name)
+        lines += _unit_warnings(af.value)
     if c.time_restriction:
         # CCDL: an intersection of the criterion's interval with this one suffices.
         # Label and date format follow the FDPG portal („Zeitraum", dd.MM.yyyy).
@@ -117,9 +150,10 @@ def _ref_rows(c: Criterion, label: str, indent: int) -> list[Row]:
     """Rows for `reference` attribute filters.
 
     The header spells out the quantifier and the scope instead of hiding them
-    behind an arrow. Reference criteria are OR-joined (verified against the cctb
-    translator, which reduces them with a UNION); multiple reference filters are
-    themselves AND-joined, like all attribute filters.
+    behind an arrow. Criteria inside one reference filter are OR-joined; several
+    reference filters on the same criterion are AND-joined, like all attribute
+    filters. The CCDL does not state the first of these; it follows the reference
+    implementation, which unions them.
     """
     rows: list[Row] = []
     refs = [af for af in c.attribute_filters if af.kind == "reference"]
@@ -130,7 +164,7 @@ def _ref_rows(c: Criterion, label: str, indent: int) -> list[Row]:
                  else "das folgende Kriterium")
         lead = "" if r == 1 else "zusätzlich (UND): "
         ref_label = f"{label}r{r}"
-        rows.append(Row(number=ref_label, connector="", indent=indent, is_header=True,
+        rows.append(Row(number=ref_label, indent=indent, is_header=True,
                         text=f"{lead}Referenzbedingung über „{name}“ — es muss {quant} "
                              f"dazu vorliegen:"))
         for k, rc in enumerate(af.ref_criteria, 1):
@@ -138,7 +172,7 @@ def _ref_rows(c: Criterion, label: str, indent: int) -> list[Row]:
             if k > 1:
                 text = f"oder {text}"
             rows.append(Row(number=f"{ref_label}{_letter(k)}",
-                            connector="", indent=indent + 1, text=text,
+                            indent=indent + 1, text=text,
                             constraints=_criterion_constraints(rc)))
     return rows
 
@@ -175,8 +209,8 @@ def version_line(q: Query) -> str:
     return "   ".join(p for p in parts if p)
 
 
-# i2b2's printed report spells out every constraint even at its default value, so a
-# document read months later never leaves the reader guessing whether it was omitted.
+# Printed even when a criterion has no constraints, so a reader is never left
+# guessing whether one was omitted or simply not shown.
 NO_CONSTRAINT = "keine Einschränkung"
 
 LEGEND = [
@@ -184,9 +218,128 @@ LEGEND = [
     ("A1, A2 …", "Ausschlussbedingung; eine genügt für den Ausschluss"),
     ("E2a, E2b …", "Kriterien innerhalb der Bedingung E2"),
     ("E4r1a …", "Kriterium einer Referenzbedingung von E4"),
-    ("Name (Code, System Version)", "Bezeichnung, Code und Kodiersystem des Konzepts"),
+    ("Name (Code, System Version)", "Bezeichnung, Code und Kodiersystem des Konzepts; "
+                                    "die vollständige System-URI steht unter „Kodiersysteme“"),
+    ("x bis y", "Wertebereich; die CCDL legt nicht fest, ob die Grenzen "
+                "eingeschlossen sind — hier unverändert wiedergegeben"),
+    ("Einheiten", "dargestellt wird der UCUM-Code aus dem Export, nicht die freie "
+                  "Bezeichnung; Abweichungen zwischen beiden werden am Kriterium vermerkt"),
+    ("Bezeichnungen", "aus der FDPG-Terminologie aufgelöst und können daher von den im "
+                      "Export enthaltenen Bezeichnungen abweichen; Codes und Systeme "
+                      "stammen unverändert aus dem Export"),
     ("→ Ausschluss", "Zutreffen dieser Bedingung schließt die Person aus"),
 ]
+
+
+def legend_for(q: Query) -> list[tuple[str, str]]:
+    """Only the notation this document actually uses.
+
+    A static legend explains `E4r1a` in a query with no reference conditions,
+    which sends the reader looking for something that is not there.
+    """
+    def crits():
+        for block in (q.inclusion, q.exclusion):
+            if block:
+                for g in block.groups:
+                    yield from g.criteria
+
+    has_groups = any(len(g.criteria) > 1
+                     for b in (q.inclusion, q.exclusion) if b for g in b.groups)
+    has_refs = any(af.kind == "reference" for c in crits() for af in c.attribute_filters)
+    filters = [c.value_filter for c in crits() if c.value_filter]
+    filters += [af.value for c in crits() for af in c.attribute_filters if af.value]
+    has_units = any(f.unit for f in filters)
+    has_range = any(f.kind == "quantity-range" for f in filters)
+
+    rows = []
+    if q.inclusion:
+        rows.append(("E1, E2 …", "Einschlussbedingung; alle müssen erfüllt sein"))
+    if q.exclusion:
+        rows.append(("A1, A2 …", "Ausschlussbedingung; eine genügt für den Ausschluss"))
+    if has_groups:
+        rows.append(("E2a, E2b …", "Kriterien innerhalb der Bedingung E2"))
+    if has_refs:
+        rows.append(("E4r1a …", "Kriterium einer Referenzbedingung von E4"))
+    rows.append(("Name (Code, System Version)",
+                 "Bezeichnung, Code und Kodiersystem des Konzepts; die vollständige "
+                 "System-URI steht unter „Kodiersysteme“"))
+    if has_range:
+        rows.append(("x bis y", "Wertebereich; die CCDL legt nicht fest, ob die Grenzen "
+                                "eingeschlossen sind — hier unverändert wiedergegeben"))
+    if has_units:
+        rows.append(("Einheiten", "dargestellt wird der UCUM-Code aus dem Export, nicht die "
+                                  "freie Bezeichnung; Abweichungen zwischen beiden werden am "
+                                  "Kriterium vermerkt"))
+    rows.append(("Bezeichnungen",
+                 "aus der FDPG-Terminologie aufgelöst und können daher von den im Export "
+                 "enthaltenen Bezeichnungen abweichen; Codes und Systeme stammen "
+                 "unverändert aus dem Export"))
+    if q.exclusion:
+        rows.append(("→ Ausschluss", "Zutreffen dieser Bedingung schließt die Person aus"))
+    return rows
+
+
+UNRESOLVED_NOTE = ("Für folgende Codes lag keine geprüfte deutsche Bezeichnung vor; "
+                   "angezeigt wird die im Export enthaltene Bezeichnung: ")
+
+
+def unresolved_codes(q: Query, code_format: str = "{code}") -> list[str]:
+    """De-duplicated `code (system)` entries for the footnote, in first-seen order."""
+    seen: set[str] = set()
+    out: list[str] = []
+    for c in q.unresolved:
+        key = f"{c.system}|{c.code}"
+        if key not in seen:
+            seen.add(key)
+            out.append(f"{code_format.format(code=c.code)} ({c.system_label})")
+    return out
+
+
+def _walk_concepts(q: Query):
+    """Every Concept anywhere in the query, so the appendix can be complete."""
+    def from_criterion(c):
+        if c.context:
+            yield c.context
+        yield from c.concepts
+        if c.value_filter:
+            yield from c.value_filter.concepts
+        for af in c.attribute_filters:
+            if af.attribute:
+                yield af.attribute
+            if af.value:
+                yield from af.value.concepts
+            for rc in af.ref_criteria:
+                yield from from_criterion(rc)
+    for block in (q.inclusion, q.exclusion):
+        if block:
+            for group in block.groups:
+                for c in group.criteria:
+                    yield from from_criterion(c)
+    for g in q.attribute_groups:
+        for tf in g.token_filters:
+            yield from tf.codes
+
+
+def code_systems(q: Query) -> list[tuple[str, str, str, bool]]:
+    """(short label, full URI, versions, ambiguous) for every system used.
+
+    The criteria lines carry a short label like „ICD-10-GM"; two different URIs
+    can share one — `…/bfarm/icd-10-gm` and the legacy `…/dimdi/icd-10-gm` do.
+    Without this table the exact system is unrecoverable from the document, and
+    that difference is exactly the kind of thing an audit needs to see.
+    """
+    seen: dict[str, tuple[str, set[str]]] = {}
+    for c in _walk_concepts(q):
+        uri = c.system or "(ohne System)"
+        label, versions = seen.setdefault(uri, (c.system_label, set()))
+        if c.version:
+            versions.add(c.version)
+    by_label: dict[str, int] = {}
+    for label, _ in seen.values():
+        by_label[label] = by_label.get(label, 0) + 1
+    return sorted(
+        (label, uri, ", ".join(sorted(v)) or "—", by_label[label] > 1)
+        for uri, (label, v) in seen.items())
 
 
 def leaf_labels(block: CriteriaBlock) -> list[str]:
@@ -195,9 +348,8 @@ def leaf_labels(block: CriteriaBlock) -> list[str]:
 
 
 def completeness_note(block: CriteriaBlock) -> str:
-    """PRESS calls an unreferenced line an „orphan line" — a known defect class in
-    hand-written search strategies. Generating from the parsed query makes it
-    impossible, which is worth stating."""
+    """States that the formula references every criterion of the block, which the
+    generated output guarantees by construction."""
     return (f"Alle {len(leaf_labels(block))} Kriterien dieses Abschnitts sind in der "
             f"formalen Struktur genau einmal referenziert.")
 
@@ -205,8 +357,8 @@ def completeness_note(block: CriteriaBlock) -> str:
 def cohort_rule(q: Query) -> str:
     """One plain-language sentence naming both label ranges and the negation.
 
-    The cohort-level NOT previously lived only in prose; here it is stated with
-    the same labels the tables use, so it survives a reader who jumps to a table.
+    Stated with the same labels the criteria carry, so the negation survives a
+    reader who jumps straight to a block.
     """
     inc = f"**alle Einschlussbedingungen ({block_labels(q.inclusion)})** erfüllt" \
         if q.inclusion else ""
@@ -285,15 +437,13 @@ def group_quantifier(group, prefix: str, gi: int) -> str:
 class Card:
     """A block in the card layout: either a criterion or a group container.
 
-    Mirrors what every reference renderer actually does — i2b2's printed Query
-    Report (bordered panels + operator gutter), the FDPG editor (cards on a blue
-    left rail), Glowing Bear (rail narrowing and darkening per level). The
-    operator lives *between* cards, never in a column.
+    The operator lives *between* cards rather than in a column, so it cannot be
+    read as belonging to one side of the pair.
     """
     label: str
     title: str
     constraints: list[str] = field(default_factory=list)
-    children: list["Card"] = field(default_factory=list)
+    children: list[Card] = field(default_factory=list)
     op: str = ""        # operator joining this card to the previous sibling
     level: int = 0
     kind: str = "criterion"   # 'criterion' | 'group' | 'reference'
@@ -380,8 +530,7 @@ def block_formula(block: CriteriaBlock) -> str:
 
 def formula_labels(block: CriteriaBlock) -> list[str]:
     """Every label appearing in the formula — used to assert that it covers all
-    leaves exactly once (Salesforce's Actionable-List-Builder invariant, and the
-    defence against the „orphan line" error class PRESS documents)."""
+    leaves exactly once."""
     import re
     # longest alternative first: E4r1a must not be truncated to E4r
     return re.findall(r"[EA]\d+r\d+[a-z]|[EA]\d+[a-z]|[EA]\d+", block_formula(block))
@@ -408,21 +557,21 @@ def block_rows(block: CriteriaBlock) -> list[Row]:
             text = _criterion_text(c)
             if excl:
                 text += " → Ausschluss"
-            rows.append(Row(number=label, connector="", indent=0,
+            rows.append(Row(number=label, indent=0,
                             text=text, constraints=_criterion_constraints(c)))
             rows += _ref_rows(c, label, indent=1)
         else:
             head = group_quantifier(group, p, gi)
             if excl:
                 head = head.rstrip(":") + " → Ausschluss:"
-            rows.append(Row(number=f"{p}{gi}", connector="", indent=0, is_header=True,
+            rows.append(Row(number=f"{p}{gi}", indent=0, is_header=True,
                             text=head))
             for ci, c in enumerate(group.criteria, 1):
                 label = f"{p}{gi}{_letter(ci)}"
                 text = _criterion_text(c)
                 if ci > 1:  # inner operator visible on the row it applies to
                     text = f"{group.inner_op.lower()} {text}"
-                rows.append(Row(number=label, connector="", indent=1, text=text,
+                rows.append(Row(number=label, indent=1, text=text,
                                 constraints=_criterion_constraints(c)))
                 rows += _ref_rows(c, label, indent=2)
     return rows
@@ -462,8 +611,7 @@ def _md_table(block: CriteriaBlock, rows: list[Row]) -> str:
 
 def _md_cards(cards: list[Card], depth: int = 0) -> list[str]:
     """Cards as nested blockquotes — Markdown's blockquote *is* a left accent
-    rail, and it nests, which is precisely the device the FDPG editor and
-    Glowing Bear use to show depth.
+    rail, and it nests, which is what shows depth.
 
     Every line inside a subtree stays `>`-prefixed, including the blank spacer
     lines: an unprefixed blank line would close the quote and restart the rail.
@@ -514,9 +662,8 @@ def render_markdown(q: Query, today: date | None = None, layout: str = "cards") 
             continue
         parts.append(f"### {title}\n")
         parts.append(block_intro(block) + "\n")
-        # Placed before the table: HdR Rn. 296 forbids a sentence continuing after
-        # a list ("Sandwich"), because the reader cannot tell whether trailing
-        # material attaches to the last item or the whole enumeration.
+        # Before the criteria, not after: trailing material below a list is
+        # ambiguous about whether it applies to the last item or to all of them.
         parts.append(f"*Formale Struktur:* `{block_formula(block)}`  \n"
                      f"<sub>{completeness_note(block)}</sub>\n")
         if layout == "table":
@@ -538,21 +685,28 @@ def render_markdown(q: Query, today: date | None = None, layout: str = "cards") 
         if has_must_have(q):
             parts.append(f"> **{MUSTHAVE_NOTE}**\n")
 
+    parts.append("## Kodiersysteme\n")
+    parts.append("| Kurzform | System-URI | Version(en) |")
+    parts.append("|---|---|---|")
+    for label, uri, versions, ambiguous in code_systems(q):
+        mark = " ⚠" if ambiguous else ""
+        parts.append(f"| {_esc(label)}{mark} | `{_esc(uri)}` | {_esc(versions)} |")
+    if any(a for *_, a in code_systems(q)):
+        parts.append("")
+        parts.append("> ⚠ Diese Kurzform steht im Dokument für mehr als eine System-URI. "
+                     "Die Kriterien nennen nur die Kurzform; maßgeblich ist die URI aus dem "
+                     "Export.")
+    parts.append("")
+
     parts.append("## Lesehilfe\n")
     parts.append("| Notation | Bedeutung |")
     parts.append("|---|---|")
-    for sym, meaning in LEGEND:
+    for sym, meaning in legend_for(q):
         parts.append(f"| `{sym}` | {meaning} |")
     parts.append("")
 
     if q.unresolved:
-        seen, items = set(), []
-        for c in q.unresolved:
-            key = f"{c.system}|{c.code}"
-            if key not in seen:
-                seen.add(key)
-                items.append(f"`{c.code}` ({c.system_label})")
-        parts.append("---\n*Für folgende Codes lag keine geprüfte deutsche Bezeichnung vor; "
-                     "angezeigt wird die im Export enthaltene Bezeichnung: "
+        items = unresolved_codes(q, "`{code}`")
+        parts.append(f"---\n*{UNRESOLVED_NOTE}"
                      + ", ".join(items) + "*")
     return "\n".join(parts) + "\n"

@@ -19,11 +19,28 @@ from html import escape
 from pathlib import Path
 
 from .model import Query
-from .render import (LEGEND, MUSTHAVE_NOTE, NO_CONSTRAINT, Row, block_formula,
-                     criteria_cards,
-                     block_intro, block_rows, completeness_note,
-                     cohort_rule, criteria_head, group_attributes, group_filters,
-                     group_names, group_title, has_must_have, version_line)
+from .render import (
+    MUSTHAVE_NOTE,
+    NO_CONSTRAINT,
+    UNRESOLVED_NOTE,
+    Row,
+    block_formula,
+    block_intro,
+    block_rows,
+    code_systems,
+    cohort_rule,
+    completeness_note,
+    criteria_cards,
+    criteria_head,
+    group_attributes,
+    group_filters,
+    group_names,
+    group_title,
+    has_must_have,
+    legend_for,
+    unresolved_codes,
+    version_line,
+)
 
 
 def _md_bold(text: str) -> str:
@@ -86,9 +103,8 @@ def _criteria_table(block, rows: list[Row], ss):
 
 
 def _card_flowables(cards, ss, excl: bool, depth: int = 0, width: float = 17.6):
-    """Cards as nested bordered blocks with a coloured left rail that narrows and
-    darkens with depth — the device i2b2's printed report, the FDPG editor and
-    Glowing Bear all use. The operator is a centred band between blocks."""
+    """Cards as nested blocks with a coloured left rail that narrows and lightens
+    with depth. The operator is a quiet band between blocks."""
     from reportlab.lib import colors
     from reportlab.lib.units import cm
     from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
@@ -197,12 +213,38 @@ def render_pdf(q: Query, path: str | Path, today: date | None = None,
             story.append(Paragraph(escape(MUSTHAVE_NOTE), ss["Cell"]))
 
     from reportlab.lib import colors as _c
-    from reportlab.platypus import Table as _T, TableStyle as _TS
+    from reportlab.platypus import Table as _T
+    from reportlab.platypus import TableStyle as _TS
+
+    systems = code_systems(q)
+    story.append(Spacer(1, 10))
+    story.append(Paragraph("Kodiersysteme", ss["Heading2"]))
+    sysrows = [["Kurzform", "System-URI", "Version(en)"]]
+    for label, uri, versions, ambiguous in systems:
+        sysrows.append([Paragraph(escape(label) + (" &#9888;" if ambiguous else ""), ss["Cell"]),
+                        Paragraph(escape(uri), ss["Cell"]),
+                        Paragraph(escape(versions), ss["Cell"])])
+    st = _T(sysrows, colWidths=[3.4 * cm, 11.2 * cm, 3.0 * cm], repeatRows=1)
+    st.setStyle(_TS([
+        ("BACKGROUND", (0, 0), (-1, 0), _c.HexColor("#555555")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), _c.white),
+        ("FONTSIZE", (0, 0), (-1, -1), 7.5),
+        ("GRID", (0, 0), (-1, -1), 0.4, _c.grey),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+    ]))
+    story.append(st)
+    if any(a for *_, a in systems):
+        story.append(Spacer(1, 3))
+        story.append(Paragraph(escape(
+            "\u26a0 Diese Kurzform steht im Dokument für mehr als eine System-URI. Die "
+            "Kriterien nennen nur die Kurzform; maßgeblich ist die URI aus dem Export."),
+            ss["Cell"]))
+
     story.append(Spacer(1, 10))
     story.append(Paragraph("Lesehilfe", ss["Heading2"]))
     legend = _T([["Notation", "Bedeutung"]]
                 + [[Paragraph(escape(s), ss["Cell"]), Paragraph(escape(m), ss["Cell"])]
-                   for s, m in LEGEND],
+                   for s, m in legend_for(q)],
                 colWidths=[5 * cm, 12.6 * cm], repeatRows=1)
     legend.setStyle(_TS([
         ("BACKGROUND", (0, 0), (-1, 0), _c.HexColor("#555555")),
@@ -214,17 +256,9 @@ def render_pdf(q: Query, path: str | Path, today: date | None = None,
     story.append(legend)
 
     if q.unresolved:
-        seen = set()
-        items = []
-        for c in q.unresolved:
-            key = f"{c.system}|{c.code}"
-            if key not in seen:
-                seen.add(key)
-                items.append(f"{c.code} ({c.system_label})")
         story.append(Spacer(1, 10))
-        story.append(Paragraph(escape(
-            "Für folgende Codes lag keine geprüfte deutsche Bezeichnung vor; angezeigt wird "
-            "die im Export enthaltene Bezeichnung: " + ", ".join(items)), ss["Italic"]))
+        story.append(Paragraph(escape(UNRESOLVED_NOTE + ", ".join(unresolved_codes(q))),
+                               ss["Italic"]))
 
     SimpleDocTemplate(str(path), pagesize=A4,
                       leftMargin=1.5 * cm, rightMargin=1.5 * cm,

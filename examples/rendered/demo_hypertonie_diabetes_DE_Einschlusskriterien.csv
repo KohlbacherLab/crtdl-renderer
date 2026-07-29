@@ -1,5 +1,5 @@
 ﻿"Kontext";"Anzeige";"System";"Code";"Version";"Filter nach Attributen (Attributname: Filter)";"Filter nach Zeitraum";"Verknüpfungsgruppe";"Nr."
-"Person";"Alter";"http://snomed.info/sct";"424144002";"";"Wert: ≥ 18 Jahre";"";"1 (UND-Gruppe)";"E1"
+"Person";"Alter";"http://snomed.info/sct";"424144002";"";"Wert: ≥ 18 Jahr(e)";"";"1 (UND-Gruppe)";"E1"
 "Diagnose";"Essentielle (primäre) Hypertonie";"http://fhir.de/CodeSystem/bfarm/icd-10-gm";"I10";"2024";"";"von 01.01.2020 bis 31.12.2024";"2 (UND-Gruppe)";"E2a"
 "Diagnose";"Hypertensive Herzkrankheit ohne (kongestive) Herzinsuffizienz";"http://fhir.de/CodeSystem/bfarm/icd-10-gm";"I11.9";"2024";"";"";"2 (UND-Gruppe)";"E2b"
 "Diagnose";"Diabetes mellitus, Typ 2: Ohne Komplikationen";"http://fhir.de/CodeSystem/bfarm/icd-10-gm";"E11.9";"2024";"Diagnosesicherheit: Gesicherte Diagnose (G, KBV_CS_SFHIR_ICD_DIAGNOSESICHERHEIT)";"";"3 (UND-Gruppe)";"E3"

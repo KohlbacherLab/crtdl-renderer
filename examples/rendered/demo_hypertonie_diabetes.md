@@ -17,7 +17,7 @@ Eine Person gehört zur Kohorte, wenn **alle Einschlussbedingungen (E1–E6)** e
 <sub>Alle 7 Kriterien dieses Abschnitts sind in der formalen Struktur genau einmal referenziert.</sub>
 
 > **E1** [Person] Alter (424144002, SNOMED CT)
-> ↳ Wert: ≥ 18 Jahre
+> ↳ Wert: ≥ 18 Jahr(e)
 
 **UND**
 
@@ -69,7 +69,7 @@ Eine Person gehört zur Kohorte, wenn **alle Einschlussbedingungen (E1–E6)** e
 > > **UND**
 > > 
 > > **A2b** [Laboruntersuchung] Creatinin [Masse/Volumen] in Serum oder Plasma (2160-0, LOINC)
-> > ↳ Wert: 3 bis 15 mg/dl
+> > ↳ Wert: 3 bis 15 mg/dL
 
 
 ## Datenextraktion
@@ -82,6 +82,20 @@ Eine Person gehört zur Kohorte, wenn **alle Einschlussbedingungen (E1–E6)** e
 
 > **(Pflicht): Fehlt das Attribut bei einer Person, wird diese vollständig von der Extraktion ausgeschlossen (mustHave-Regel).**
 
+## Kodiersysteme
+
+| Kurzform | System-URI | Version(en) |
+|---|---|---|
+| ATC | `http://fhir.de/CodeSystem/bfarm/atc` | 2024 |
+| FDPG | `fdpg.mii.cds` | 1.0.0 |
+| ICD-10-GM | `http://fhir.de/CodeSystem/bfarm/icd-10-gm` | 2024 |
+| KBV_CS_SFHIR_ICD_DIAGNOSESICHERHEIT | `https://fhir.kbv.de/CodeSystem/KBV_CS_SFHIR_ICD_DIAGNOSESICHERHEIT` | — |
+| LOINC | `http://loinc.org` | — |
+| MII-Consent | `urn:oid:2.16.840.1.113883.3.1937.777.24.5.3` | 1.0.7 |
+| OPS | `http://fhir.de/CodeSystem/bfarm/ops` | 2024 |
+| SNOMED CT | `http://snomed.info/sct` | — |
+| mii.abide | `mii.abide` | — |
+
 ## Lesehilfe
 
 | Notation | Bedeutung |
@@ -89,8 +103,10 @@ Eine Person gehört zur Kohorte, wenn **alle Einschlussbedingungen (E1–E6)** e
 | `E1, E2 …` | Einschlussbedingung; alle müssen erfüllt sein |
 | `A1, A2 …` | Ausschlussbedingung; eine genügt für den Ausschluss |
 | `E2a, E2b …` | Kriterien innerhalb der Bedingung E2 |
-| `E4r1a …` | Kriterium einer Referenzbedingung von E4 |
-| `Name (Code, System Version)` | Bezeichnung, Code und Kodiersystem des Konzepts |
+| `Name (Code, System Version)` | Bezeichnung, Code und Kodiersystem des Konzepts; die vollständige System-URI steht unter „Kodiersysteme“ |
+| `x bis y` | Wertebereich; die CCDL legt nicht fest, ob die Grenzen eingeschlossen sind — hier unverändert wiedergegeben |
+| `Einheiten` | dargestellt wird der UCUM-Code aus dem Export, nicht die freie Bezeichnung; Abweichungen zwischen beiden werden am Kriterium vermerkt |
+| `Bezeichnungen` | aus der FDPG-Terminologie aufgelöst und können daher von den im Export enthaltenen Bezeichnungen abweichen; Codes und Systeme stammen unverändert aus dem Export |
 | `→ Ausschluss` | Zutreffen dieser Bedingung schließt die Person aus |
 
 ---

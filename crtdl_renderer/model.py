@@ -93,7 +93,7 @@ class AttributeFilter:
     kind: str  # value-filter kinds + 'reference'
     attribute: Concept | None
     value: ValueFilter | None = None            # for non-reference kinds
-    ref_criteria: list["Criterion"] = field(default_factory=list)  # for 'reference'
+    ref_criteria: list[Criterion] = field(default_factory=list)  # for 'reference'
 
 
 @dataclass
@@ -250,10 +250,29 @@ class Parser:
         return Criterion(context=ctx, concepts=concepts, value_filter=vf,
                          attribute_filters=afs, time_restriction=tr)
 
-    def block(self, kind: str, groups_json: list[list[dict]]) -> CriteriaBlock:
+    def block(self, kind: str, groups_json) -> CriteriaBlock:
         outer_op, inner_op = ("UND", "ODER") if kind == "inclusion" else ("ODER", "UND")
-        groups = [CriterionGroup(inner_op=inner_op, criteria=[self.criterion(c) for c in grp])
-                  for grp in groups_json if grp]
+        field = "inclusionCriteria" if kind == "inclusion" else "exclusionCriteria"
+        if not isinstance(groups_json, list):
+            raise CrtdlParseError(
+                f"{field} muss eine Liste von Listen sein, gefunden: "
+                f"{type(groups_json).__name__}.")
+        groups = []
+        for i, grp in enumerate(groups_json):
+            if not isinstance(grp, list):
+                raise CrtdlParseError(
+                    f"{field}[{i}] muss eine Liste von Kriterien sein, gefunden: "
+                    f"{type(grp).__name__}. Die äußere Liste enthält Gruppen, "
+                    f"die innere die Kriterien.")
+            if not grp:
+                continue
+            for j, c in enumerate(grp):
+                if not isinstance(c, dict):
+                    raise CrtdlParseError(
+                        f"{field}[{i}][{j}] ist kein Kriterium-Objekt, gefunden: "
+                        f"{type(c).__name__}.")
+            groups.append(CriterionGroup(inner_op=inner_op,
+                                         criteria=[self.criterion(c) for c in grp]))
         return CriteriaBlock(kind=kind, outer_op=outer_op, groups=groups)
 
     # -- data extraction ---------------------------------------------------
@@ -280,7 +299,13 @@ class Parser:
 
     # -- entry point -------------------------------------------------------
     def parse(self, data: dict[str, Any], source_name: str = "") -> Query:
-        cohort = data.get("cohortDefinition", data)
+        if not isinstance(data, dict):
+            raise CrtdlParseError(
+                f"Die Datei enthält kein JSON-Objekt, sondern {type(data).__name__}.")
+        cohort = data.get("cohortDefinition") or data
+        if not isinstance(cohort, dict):
+            raise CrtdlParseError(
+                f"cohortDefinition muss ein Objekt sein, gefunden: {type(cohort).__name__}.")
         if "inclusionCriteria" not in cohort:
             raise CrtdlParseError(
                 "Keine inclusionCriteria gefunden — weder auf oberster Ebene noch in cohortDefinition.")

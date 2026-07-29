@@ -14,8 +14,9 @@ interchangeable claims.
    wins over the bulk import on conflict.
 3. **The `display` embedded in the export** — an empty string counts as missing.
 4. **The bare code.**
-5. Optionally `--online`: a FHIR `CodeSystem/$lookup` with `displayLanguage=de-DE`, written
-   back into the cache.
+5. Optionally `--online`: a FHIR `CodeSystem/$lookup` with `displayLanguage=de-DE`. Results are
+   written back to the file given with `--cache`; without `--cache` they are held in memory for
+   the run only. The packaged curated cache is never modified.
 
 Every code whose display did not come from a verified German source, and whose system is not
 natively German, is listed in a footnote at the end of the document. The renderer never

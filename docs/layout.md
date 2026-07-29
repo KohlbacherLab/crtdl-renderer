@@ -12,9 +12,9 @@ full-width block reads as a table row whatever it means, and the structural work
 rail plus whitespace.
 
 **The operator stands between blocks.** It joins two things, so it sits between them, small and
-letterspaced. It is never a column: in the earlier table layout a `UND` in the connector column
-meant "joined to the previous *group*" on one row and "joined to the sibling *criterion*" on the
-next — the same glyph in the same position with two different scopes.
+letterspaced. It is never a column, because a single operator column has to mean "joined to the
+previous group" on one row and "joined to the sibling criterion" on the next — one glyph, one
+position, two scopes.
 
 **Labels carry membership.** `E2b` announces "group E2, member b". This survives a wrapped line
 and a page break, which indentation does not: a continuation line starts at the cell edge and
@@ -39,11 +39,12 @@ only one, so the document survives greyscale printing.
 statement, in the labels the document actually shows, placed *before* the blocks. A test
 asserts it covers every leaf exactly once.
 
-## Where each decision came from
+## Prior art
 
-Verified from published sources and application source, not from taste.
+Each rule follows established practice rather than invention. Sources are named so a future
+change can weigh what it is departing from.
 
-| Decision | Evidence |
+| Rule | Precedent |
 |---|---|
 | Quantifier lead-in instead of bare operators | OHDSI CIRCE emits `with all of the following criteria:` / `with any of the following criteria:`; SPIRIT 2013 uses "must comply with all of the following"; GOV.UK bans trailing and/or outright and mandates a clarifying phrase |
 | Inner operator as a lowercase lead-in on each member after the first | CIRCE does exactly this: `Type() == 'ALL' ? 'and ' : 'or '`, skipped when `$index() == 0` |
@@ -59,24 +60,23 @@ Verified from published sources and application source, not from taste.
 | German vocabulary | the FDPG product strings (`UND`, `ODER`, `Einschlusskriterien`, `Ausschlusskriterien`, `verknüpft`). The portal has no "UND-Verknüpfung" or "Kriteriengruppe" wording, so neither does this |
 | Dates as `DD.MM.YYYY` | the FDPG interface's own format |
 
-Rejected on evidence: **Venn diagrams** (VQuery users were slower and more error-prone than
-with a textual interface, and the form breaks past three sets); **infix text with implied
-precedence** (17 of 20 subjects misread precedence in Young & Shneiderman's SQL condition);
-**indentation as the only nesting cue** (fails on wrap and page break).
+Deliberately not used: **Venn diagrams**, which cannot show more than three sets legibly;
+**infix text relying on operator precedence**, which readers routinely misparse; and
+**indentation as the only nesting cue**, which is lost to line wrapping and page breaks.
 
 ## What is still a table, and why
 
-The extraction table, the legend, and the CSV export. Tabular is right for enumerable facts;
-it was wrong for the boolean structure. The `--layout table` flag keeps the old grid for the
-criteria if a particular reader wants one.
+The extraction table, the code-system appendix, the legend and the CSV export. Tabular suits
+enumerable facts; it does not suit boolean structure. `--layout table` renders the criteria as
+a grid too, for readers who prefer one.
 
 ## Known gaps
 
-- **No worked example.** Both research threads rate a positive plus a near-miss case the
-  highest-value remaining addition. Not generated automatically: inventing a clinically
-  plausible patient risks fabricating something misleading. It wants human-authored text.
+- **No worked example.** A qualifying case plus a near-miss would help a lay reader most, but
+  it is not generated: inventing a clinically plausible patient risks fabricating something
+  misleading. It needs human-authored text.
 - **`attributeRef` renders verbatim.** `Observation.value` has no German label here; those
   live in the FDPG ontology's `backend.zip` `ui_profile` table, which is not imported yet.
-- **Value sets are always inlined.** Both CIRCE and TriNetX push long code lists to an
-  appendix. The longest list across the bundled corpus is 2 codes, so the threshold —
-  inline up to about 5, reference beyond — is documented rather than implemented.
+- **Value sets are always inlined.** Long code lists belong in an appendix. The longest list
+  in the bundled corpus is two codes, so the threshold — inline up to about five, reference
+  beyond — is documented rather than implemented.

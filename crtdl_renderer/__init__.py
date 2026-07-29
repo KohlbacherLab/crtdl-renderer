@@ -17,4 +17,8 @@ from .render import render_markdown
 from .terminology import Resolver
 
 __all__ = ["CrtdlParseError", "Query", "Resolver", "parse_file", "render_markdown"]
-__version__ = "0.1.0"
+try:                                  # single source of truth: pyproject
+    from importlib.metadata import version as _version
+    __version__ = _version("crtdl-renderer")
+except Exception:                      # running from a source tree without install
+    __version__ = "0.0.0+unknown"

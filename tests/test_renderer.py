@@ -21,11 +21,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from crtdl_renderer.model import CrtdlParseError, Parser, parse_file  # noqa: E402
-from crtdl_renderer.render import (block_formula, block_intro, block_rows,  # noqa: E402
-                                   criteria_head, formula_labels, leaf_labels,
-                                   cohort_rule, render_markdown)
-from crtdl_renderer.terminology import Resolver  # noqa: E402
+from crtdl_renderer.model import CrtdlParseError, Parser, parse_file
+from crtdl_renderer.render import (
+    block_formula,
+    block_intro,
+    block_rows,
+    cohort_rule,
+    criteria_head,
+    formula_labels,
+    leaf_labels,
+    render_markdown,
+)
+from crtdl_renderer.terminology import Resolver
 
 EX = ROOT / "examples"
 
@@ -75,7 +82,6 @@ def test_labels_identify_their_group_without_indentation():
     assert rows[1].is_header and "Mindestens eines" in rows[1].text
     # the inner operator appears on the row it governs, not in a separate column
     assert rows[3].text.startswith("oder ")
-    assert all(r.connector == "" for r in rows)
 
 
 def test_formula_covers_every_leaf_exactly_once():
@@ -210,8 +216,8 @@ def test_uri_version_is_shortened_in_label():
 
 
 def test_multiple_reference_filters_keep_and_semantics():
-    """attributeFilters are AND-joined, so a second reference block needs a
-    connector and its own number prefix."""
+    """attributeFilters are AND-joined, so a second reference block must say so
+    and carry its own number prefix."""
     def ref(attr, code):
         return {"type": "reference",
                 "attributeCode": {"code": attr, "system": "mii.abide", "display": attr},
@@ -297,6 +303,64 @@ def test_csv_export_covers_every_criterion():
     assert labels == leaf_labels(q.inclusion)
     # the group column disambiguates what the original leaves ambiguous
     assert "UND-Gruppe" in rows[1][-2]
+
+
+def test_unit_comes_from_the_ucum_code_not_the_display():
+    """`unit.display` is free text nothing validates. A file whose code says
+    mg/dL while its display says g/dL is out by a factor of 1000; printing the
+    display would silently misstate a laboratory threshold."""
+    def lab(code, disp):
+        return {"context": {"code": "Laboruntersuchung", "system": "fdpg.mii.cds",
+                            "display": "Labor"},
+                "termCodes": [{"code": "2160-0", "system": "http://loinc.org",
+                               "display": "Kreatinin"}],
+                "valueFilter": {"type": "quantity-range", "minValue": 3, "maxValue": 15,
+                                "unit": {"code": code, "display": disp}}}
+
+    def lines(code, disp):
+        return block_rows(_q([[lab(code, disp)]]).inclusion)[0].constraints
+
+    # mg/dl vs mg/dL is the same unit in UCUM (L and l both mean litre)
+    assert lines("mg/dL", "mg/dl") == ["Wert: 3 bis 15 mg/dL"]
+    # a contradicting display must not win, and must be reported
+    contradiction = lines("mg/dL", "g/dL")
+    assert contradiction[0] == "Wert: 3 bis 15 mg/dL"
+    assert "widersprüchlich" in contradiction[1] and "g/dL" in contradiction[1]
+    # a cryptic UCUM code still gets its curated German rendering
+    assert lines("Cel", "") == ["Wert: 3 bis 15 °C"]
+
+
+def test_malformed_structure_raises_a_readable_error():
+    """Wrong-typed JSON must produce an actionable message, not a traceback."""
+    cases = {
+        "top-level array": [],
+        "criteria not a list": {"version": "v", "inclusionCriteria": {"a": 1}},
+        "groups not nested": {"version": "v", "inclusionCriteria": [{"code": "x"}]},
+        "criterion is a string": {"version": "v", "inclusionCriteria": [["x"]]},
+    }
+    for name, bad in cases.items():
+        try:
+            Parser(Resolver()).parse(bad, "t.json")
+        except CrtdlParseError:
+            continue
+        except Exception as exc:
+            raise AssertionError(f"{name}: {type(exc).__name__} instead of "
+                                 f"CrtdlParseError") from exc
+        raise AssertionError(f"{name}: no error raised")
+
+
+def test_online_lookups_never_touch_the_packaged_cache():
+    """The shipped curated cache is content, not scratch space: without an
+    explicit --cache there is nowhere to persist, so nothing is written."""
+    from crtdl_renderer.terminology import DEFAULT_CACHE
+
+    before = DEFAULT_CACHE.read_bytes()
+    r = Resolver()
+    assert r.cache_path is None
+    r.cache["http://example.org|x"] = "Neu"
+    r._dirty = True
+    r.save_cache()
+    assert DEFAULT_CACHE.read_bytes() == before, "packaged cache was modified"
 
 
 def test_all_examples_render():

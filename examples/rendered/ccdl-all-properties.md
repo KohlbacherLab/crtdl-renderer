@@ -15,13 +15,13 @@ Eine Person gehört zur Kohorte, wenn **alle Einschlussbedingungen (E1–E4)** e
 *Formale Struktur:* `E1 UND E2 UND (E3a ODER E3b) UND (E4 UND (E4r1a ODER E4r1b))`  
 <sub>Alle 7 Kriterien dieses Abschnitts sind in der formalen Struktur genau einmal referenziert.</sub>
 
-> **E1** [Person] Geschlecht (LL2191-6, LOINC)
+> **E1** [Patient] Geschlecht (LL2191-6, LOINC)
 > ↳ Wert: Weiblich (F, LOINC) ODER Männlich (M, LOINC)
 
 **UND**
 
-> **E2** [Person] Alter (30525-0, LOINC)
-> ↳ Wert: > 18 Jahr
+> **E2** [Patient] Alter (30525-0, LOINC)
+> ↳ Wert: > 18 Jahr(e)
 
 **UND**
 
@@ -55,13 +55,14 @@ Eine Person gehört zur Kohorte, wenn **alle Einschlussbedingungen (E1–E4)** e
 *Formale Struktur:* `A1 ODER A2 ODER (A3a UND A3b)`  
 <sub>Alle 4 Kriterien dieses Abschnitts sind in der formalen Struktur genau einmal referenziert.</sub>
 
-> **A1** [Person] Geschlecht (LL2191-6, LOINC) → Ausschluss
+> **A1** [Patient] Geschlecht (LL2191-6, LOINC) → Ausschluss
 > ↳ Wert: male (ohne System)
 
 **ODER**
 
-> **A2** [Person] Alter (30525-0, LOINC) → Ausschluss
-> ↳ Wert: > 65 Jahr
+> **A2** [Patient] Alter (30525-0, LOINC) → Ausschluss
+> ↳ Wert: > 65 year
+> ↳ ⚠ Einheit im Export widersprüchlich: UCUM-Code „year“, Bezeichnung „Jahr“ — dargestellt wird der Code.
 
 **ODER**
 
@@ -71,11 +72,28 @@ Eine Person gehört zur Kohorte, wenn **alle Einschlussbedingungen (E1–E4)** e
 > > 
 > > **UND**
 > > 
-> > **A3b** [Person] Körpertemperatur (8310-5, LOINC)
+> > **A3b** [Patient] Körpertemperatur (8310-5, LOINC)
 > > ↳ Wert: 35 bis 39 °C
 > > ↳ method: Axillary (LA9370-3, LOINC)
 > > ↳ Zeitraum (Überschneidung): von 09.09.2021 bis 09.10.2021
 
+
+## Kodiersysteme
+
+| Kurzform | System-URI | Version(en) |
+|---|---|---|
+| FDPG | `fdpg.mii.cds` | 1.0.0 |
+| ICD-10-GM | `http://fhir.de/CodeSystem/dimdi/icd-10-gm` | — |
+| ICD-O-3 | `icd-o-3` | — |
+| LOINC ⚠ | `http://loinc.org` | — |
+| LOINC ⚠ | `https://fhir.loinc.org/CodeSystem/$lookup?system=http://loinc.org&code=LL2191-6` | — |
+| OPS | `http://fhir.de/CodeSystem/bfarm/ops` | 2023 |
+| abide | `abide` | — |
+| fhir | `http://hl7.org/fhir/` | — |
+| mii.abide | `mii.abide` | — |
+| ohne System | `(ohne System)` | — |
+
+> ⚠ Diese Kurzform steht im Dokument für mehr als eine System-URI. Die Kriterien nennen nur die Kurzform; maßgeblich ist die URI aus dem Export.
 
 ## Lesehilfe
 
@@ -85,7 +103,10 @@ Eine Person gehört zur Kohorte, wenn **alle Einschlussbedingungen (E1–E4)** e
 | `A1, A2 …` | Ausschlussbedingung; eine genügt für den Ausschluss |
 | `E2a, E2b …` | Kriterien innerhalb der Bedingung E2 |
 | `E4r1a …` | Kriterium einer Referenzbedingung von E4 |
-| `Name (Code, System Version)` | Bezeichnung, Code und Kodiersystem des Konzepts |
+| `Name (Code, System Version)` | Bezeichnung, Code und Kodiersystem des Konzepts; die vollständige System-URI steht unter „Kodiersysteme“ |
+| `x bis y` | Wertebereich; die CCDL legt nicht fest, ob die Grenzen eingeschlossen sind — hier unverändert wiedergegeben |
+| `Einheiten` | dargestellt wird der UCUM-Code aus dem Export, nicht die freie Bezeichnung; Abweichungen zwischen beiden werden am Kriterium vermerkt |
+| `Bezeichnungen` | aus der FDPG-Terminologie aufgelöst und können daher von den im Export enthaltenen Bezeichnungen abweichen; Codes und Systeme stammen unverändert aus dem Export |
 | `→ Ausschluss` | Zutreffen dieser Bedingung schließt die Person aus |
 
 ---
