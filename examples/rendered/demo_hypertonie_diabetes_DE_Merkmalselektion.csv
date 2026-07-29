@@ -1,0 +1,4 @@
+﻿"ID";"Modul / Profil";"Merkmalname";"Felder";"Filter nach Kodierung/Name";"Filter nach Zeitraum";"Verknüpft mit (Spalte: ID)";"Nur extrahieren wenn referenziert";"Erforderlich"
+"grp-patient";"Person — Patient";"";"Patient.gender; Patient.birthDate";"";"";"";"";"JA"
+"grp-labor";"HbA1c-Laborwerte";"HbA1c-Laborwerte";"Observation.code; Observation.value; Observation.encounter";"code: Hämoglobin A1c/Hämoglobin.gesamt in Blut (4548-4, LOINC) ODER Hämoglobin A1c/Hämoglobin.gesamt in Blut mittels Hochleistungsflüssigkeitschromatografie (HPLC) (17856-6, LOINC); date: 01.01.2022 bis 31.12.2024";"date: 01.01.2022 bis 31.12.2024";"Fall — KontaktGesundheitseinrichtung";"";"JA"
+"grp-fall";"Fall — KontaktGesundheitseinrichtung (nur als Referenz)";"";"Encounter.period; Encounter.diagnosis";"";"";"";"JA";""

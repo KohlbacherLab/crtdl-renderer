@@ -1,0 +1,8 @@
+﻿"Kontext";"Anzeige";"System";"Code";"Version";"Filter nach Attributen (Attributname: Filter)";"Filter nach Zeitraum";"Verknüpfungsgruppe";"Nr."
+"Person";"Geschlecht";"http://loinc.org";"LL2191-6";"";"Wert: Weiblich (F, LOINC) ODER Männlich (M, LOINC)";"";"1 (UND-Gruppe)";"E1"
+"Person";"Alter";"http://loinc.org";"30525-0";"";"Wert: > 18 Jahr";"";"2 (UND-Gruppe)";"E2"
+"Diagnose";"F00";"http://fhir.de/CodeSystem/dimdi/icd-10-gm";"F00";"";"";"";"3 (UND-Gruppe)";"E3a"
+"Diagnose";"F09";"http://fhir.de/CodeSystem/dimdi/icd-10-gm";"F09";"";"";"von 09.09.2021 bis 09.10.2021";"3 (UND-Gruppe)";"E3b"
+"Bioprobe";"Exzision und Destruktion von erkranktem Gewebe der Schädelknochen: Schädelbasis, Tumorgewebe";"http://fhir.de/CodeSystem/bfarm/ops";"5-016.0";"2023";"";"";"4 (UND-Gruppe)";"E4"
+"Diagnose";"Some cid-o-3 Cancer";"icd-o-3";"C50.0";"";"status: active (fhir)";"";"4 → Referenz „specimen diagnosis“ von E4 (ODER-Gruppe)";"E4r1a"
+"Diagnose";"Some cid-o-3 Cancer";"icd-o-3";"C50.1";"";"";"";"4 → Referenz „specimen diagnosis“ von E4 (ODER-Gruppe)";"E4r1b"

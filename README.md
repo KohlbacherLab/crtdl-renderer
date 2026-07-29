@@ -17,23 +17,32 @@ crtdl-render query.json -f pdf -o out/
 
 ## What the output looks like
 
-```
-Einschlusskriterien
-Alle 6 Bedingungen E1–E6 müssen erfüllt sein (mit UND verknüpft).
-
-▎E1  [Person] Alter (424144002, SNOMED CT)
-    Wert: ≥ 18 Jahre
- U N D
-▎E2  Mindestens eines der folgenden 2 Kriterien (E2a–E2b):
-   ▎E2a  [Diagnose] Essentielle (primäre) Hypertonie (I10, ICD-10-GM 2024)
-        Zeitraum (Überschneidung): von 01.01.2020 bis 31.12.2024
-    O D E R
-   ▎E2b  [Diagnose] Hypertensive Herzkrankheit ohne … (I11.9, ICD-10-GM 2024)
-```
+<p align="center">
+  <img src="examples/rendered/preview-demo.png" alt="Rendered feasibility query: inclusion and exclusion criteria as nested blocks with German display names" width="620">
+</p>
 
 Every condition is a block on a coloured left rail that thins and lightens with depth; the
-operator stands *between* blocks rather than in a column. See [docs/layout.md](docs/layout.md)
-for why, and what it replaced.
+operator stands *between* blocks rather than in a column, and the label (`E2a`) carries the
+group membership so the structure survives a page break. Exclusion criteria are marked four
+ways — heading, section rule, `→ Ausschluss` on the block, and a warm rail — so nothing depends
+on colour alone.
+
+Full outputs for two queries are committed under
+[`examples/rendered/`](examples/rendered/), in every format:
+
+| Query | PDF | Markdown | DOCX | CSV |
+|---|---|---|---|---|
+| Demo: adults with hypertension **and** type-2 diabetes | [PDF](examples/rendered/demo_hypertonie_diabetes.pdf) | [MD](examples/rendered/demo_hypertonie_diabetes.md) | [DOCX](examples/rendered/demo_hypertonie_diabetes.docx) | [inclusion](examples/rendered/demo_hypertonie_diabetes_DE_Einschlusskriterien.csv) · [exclusion](examples/rendered/demo_hypertonie_diabetes_DE_Ausschlusskriterien.csv) · [features](examples/rendered/demo_hypertonie_diabetes_DE_Merkmalselektion.csv) |
+| MII spec example — three nesting levels, reference condition | [PDF](examples/rendered/ccdl-all-properties.pdf) | [MD](examples/rendered/ccdl-all-properties.md) | [DOCX](examples/rendered/ccdl-all-properties.docx) | [inclusion](examples/rendered/ccdl-all-properties_DE_Einschlusskriterien.csv) · [exclusion](examples/rendered/ccdl-all-properties_DE_Ausschlusskriterien.csv) |
+
+The second one is the interesting case — `E4` contains a reference condition `E4r1`, which in
+turn contains `E4r1a` / `E4r1b` joined by ODER:
+
+<p align="center">
+  <img src="examples/rendered/preview-nested.png" alt="Three levels of nesting: criterion, reference condition, referenced criteria" width="620">
+</p>
+
+See [docs/layout.md](docs/layout.md) for why the layout looks like this and what it replaced.
 
 ## Usage
 

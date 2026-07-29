@@ -1,0 +1,5 @@
+﻿"Kontext";"Anzeige";"System";"Code";"Version";"Filter nach Attributen (Attributname: Filter)";"Filter nach Zeitraum";"Verknüpfungsgruppe";"Nr."
+"Person";"Geschlecht";"http://loinc.org";"LL2191-6";"";"Wert: male (ohne System)";"";"1 (ODER-Gruppe)";"A1"
+"Person";"Alter";"http://loinc.org";"30525-0";"";"Wert: > 65 Jahr";"";"2 (ODER-Gruppe)";"A2"
+"Diagnose";"F00.9";"http://fhir.de/CodeSystem/dimdi/icd-10-gm";"F00.9";"";"";"";"3 (ODER-Gruppe)";"A3a"
+"Person";"Körpertemperatur";"http://loinc.org";"8310-5";"";"Wert: 35 bis 39 °C; method: Axillary (LA9370-3, LOINC)";"von 09.09.2021 bis 09.10.2021";"3 (ODER-Gruppe)";"A3b"
