@@ -214,13 +214,36 @@ class Parser:
         kind = vf.get("type", "")
         f = ValueFilter(kind=kind)
         if kind == "concept":
-            f.concepts = [self.concept(c) for c in vf.get("selectedConcepts", [])]
+            selected = vf.get("selectedConcepts")
+            if not isinstance(selected, list) or not selected:
+                raise CrtdlParseError(
+                    "Ein Filter vom Typ „concept\u201c benötigt eine nicht-leere Liste "
+                    "„selectedConcepts\u201c.")
+            for c in selected:
+                if not isinstance(c, dict):
+                    raise CrtdlParseError(
+                        f"selectedConcepts enthält kein Objekt, sondern "
+                        f"{type(c).__name__}.")
+            f.concepts = [self.concept(c) for c in selected]
         elif kind == "quantity-comparator":
-            f.comparator = vf.get("comparator")
-            f.value = vf.get("value")
+            comparator, value = vf.get("comparator"), vf.get("value")
+            if comparator not in COMPARATORS:
+                raise CrtdlParseError(
+                    f"Unbekannter Vergleichsoperator {comparator!r}; zulässig sind "
+                    f"{', '.join(COMPARATORS)}.")
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                raise CrtdlParseError(
+                    f"quantity-comparator benötigt einen numerischen Wert, gefunden: "
+                    f"{type(value).__name__}.")
+            f.comparator, f.value = comparator, value
         elif kind == "quantity-range":
-            f.min_value = vf.get("minValue")
-            f.max_value = vf.get("maxValue")
+            lo, hi = vf.get("minValue"), vf.get("maxValue")
+            for name, v in (("minValue", lo), ("maxValue", hi)):
+                if not isinstance(v, (int, float)) or isinstance(v, bool):
+                    raise CrtdlParseError(
+                        f"quantity-range benötigt einen numerischen {name}, gefunden: "
+                        f"{type(v).__name__}.")
+            f.min_value, f.max_value = lo, hi
         # Any other type is kept and flagged in the output rather than rejected:
         # hiding a filter would understate the query, refusing the file helps nobody.
         if vf.get("unit"):
@@ -278,8 +301,17 @@ class Parser:
                     f"attributeFilter ist kein Objekt, gefunden: {type(a).__name__}.")
         afs = [self.attribute_filter(a, in_reference=in_reference) for a in raw_afs]
         tr = None
-        if isinstance(c.get("timeRestriction"), dict):
+        if c.get("timeRestriction") is not None:
             t = c["timeRestriction"]
+            if not isinstance(t, dict):
+                raise CrtdlParseError(
+                    f"timeRestriction muss ein Objekt sein, gefunden: "
+                    f"{type(t).__name__}.")
+            for key in ("afterDate", "beforeDate"):
+                if key in t and t[key] is not None and not isinstance(t[key], str):
+                    raise CrtdlParseError(
+                        f"timeRestriction.{key} muss eine Zeichenkette sein, gefunden: "
+                        f"{type(t[key]).__name__}.")
             if not (t.get("afterDate") or t.get("beforeDate")):
                 raise CrtdlParseError(
                     "timeRestriction benötigt afterDate oder beforeDate; ohne beide wäre "
@@ -321,26 +353,53 @@ class Parser:
         return CriteriaBlock(kind=kind, outer_op=outer_op, groups=groups)
 
     # -- data extraction ---------------------------------------------------
+    @staticmethod
+    def _flag(value: Any, name: str) -> bool:
+        """Booleans only: the string "false" is truthy and would invert the flag."""
+        if value is None:
+            return False
+        if not isinstance(value, bool):
+            raise CrtdlParseError(
+                f"{name} muss true oder false sein, gefunden: {type(value).__name__}.")
+        return value
+
     def attribute_group(self, g: dict[str, Any]) -> AttributeGroup:
         tokens, dates, unknown = [], [], []
         for flt in g.get("filter", []):
             kind = flt.get("type")
-            # The CRTDL schema allows any string as filter type; classify by the
-            # fields actually present rather than trusting `type` alone.
-            if kind == "token" or flt.get("codes"):
+            # An explicit type wins; only an absent one is inferred from the payload,
+            # so a `date` filter carrying stray `codes` is not silently retyped.
+            if kind == "date":
+                dates.append(DateFilter(name=flt.get("name", ""),
+                                        start=flt.get("start"), end=flt.get("end")))
+                continue
+            if kind == "token" or (not kind and flt.get("codes")):
                 tokens.append(TokenFilter(name=flt.get("name", ""),
                                           codes=[self.concept(c) for c in flt.get("codes", [])]))
-            elif kind == "date" or flt.get("start") or flt.get("end"):
+            elif not kind and (flt.get("start") or flt.get("end")):
                 dates.append(DateFilter(name=flt.get("name", ""),
                                         start=flt.get("start"), end=flt.get("end")))
             else:
                 unknown.append(f"{flt.get('name') or '?'} (Typ „{kind or '?'}“)")
-        attrs = [Attribute(ref=a.get("attributeRef", ""), must_have=bool(a.get("mustHave")),
-                           linked_groups=a.get("linkedGroups", []) or [])
-                 for a in g.get("attributes", [])]
+        attrs = []
+        for a in g.get("attributes", []):
+            must = a.get("mustHave")
+            if not isinstance(must, bool):
+                # "false" is a non-empty string and would become True
+                raise CrtdlParseError(
+                    f"attributeRef {a.get('attributeRef')!r}: mustHave muss true oder "
+                    f"false sein, gefunden: {type(must).__name__}.")
+            linked = a.get("linkedGroups") or []
+            if not isinstance(linked, list) or any(not isinstance(x, str) for x in linked):
+                raise CrtdlParseError(
+                    f"attributeRef {a.get('attributeRef')!r}: linkedGroups muss eine "
+                    f"Liste von Gruppen-IDs sein.")
+            attrs.append(Attribute(ref=a.get("attributeRef", ""), must_have=must,
+                                   linked_groups=linked))
         return AttributeGroup(
             id=g.get("id", ""), name=g.get("name"), group_reference=g.get("groupReference", ""),
-            include_reference_only=bool(g.get("includeReferenceOnly")),
+            include_reference_only=self._flag(g.get("includeReferenceOnly"),
+                                              "includeReferenceOnly"),
             attributes=attrs, token_filters=tokens, date_filters=dates,
             unknown_filters=unknown,
         )

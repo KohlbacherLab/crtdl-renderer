@@ -1,6 +1,6 @@
 [project]
 name = "crtdl-renderer"
-version = "1.1.1"
+version = "1.1.2"
 description = "Renders MII/FDPG feasibility queries (CRTDL/CCDL) as readable German documents — Markdown, DOCX, PDF, CSV"
 readme = "README.md"
 requires-python = ">=3.11"

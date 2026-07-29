@@ -89,7 +89,7 @@ Real files disagree with the published schema. All of these parse:
 | empty `system`, empty `display` | `ccdl-all-properties.json` |
 | malformed dates such as `"2021-5"` | `CRTDL_Diagnosis_linked_with_Encounter.json` |
 | unknown `valueFilter.type` | surfaced in the output as „⚠ unbekannter Filtertyp", never dropped |
-| `filter.type` absent or unexpected | classified by which fields are present |
+| `filter.type` absent | classified by which fields are present; an explicit `type` always wins, so a `date` filter carrying stray `codes` is not retyped |
 
 The CRTDL schema also `$ref`s `#/definitions/cohortDefinition` while the CCDL schema uses
 `$defs` at its root, so the published pair cannot resolve as-is. Parsing is therefore lenient
@@ -108,6 +108,12 @@ A file is refused, with the offending path named, when:
 | a `reference` filter with no `criteria` | it would constrain nothing |
 | a `timeRestriction` with neither `afterDate` nor `beforeDate` | invalid per the schema, and it would silently vanish from the document |
 | a criterion without `termCodes` | there is no concept to render |
+| a `quantity-comparator` whose comparator is not one of `gt lt ge le eq ne`, or whose value is not numeric | it would render as a constraint that does not exist |
+| a `quantity-range` without numeric `minValue` and `maxValue` | same |
+| a `concept` filter with an empty or non-list `selectedConcepts` | it would render an empty value restriction |
+| a `timeRestriction` that is not an object, or whose dates are not strings | it would vanish or crash the date formatter |
+| `mustHave` or `includeReferenceOnly` that is not a boolean | the string `"false"` is truthy and would invert the flag |
+| `linkedGroups` that is not a list of strings | a string would be rendered character by character |
 | wrong types — root not an object, criteria not lists of lists, a criterion that is not an object, `termCodes`/`valueFilter`/`attributeFilters` of the wrong shape | the structure cannot be interpreted; guessing would be worse than refusing |
 
 Anything the renderer cannot interpret but *can* still show — an unknown `valueFilter.type`, an

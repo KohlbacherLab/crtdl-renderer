@@ -1,4 +1,4 @@
 ﻿"Kontext";"Anzeige";"System";"Code";"Version";"Filter nach Attributen (Attributname: Filter)";"Filter nach Zeitraum";"Verknüpfungsgruppe";"Nr."
-"Diagnose";"Diabetes mellitus, während der Schwangerschaft auftretend";"http://fhir.de/CodeSystem/bfarm/icd-10-gm";"O24.4";"2024";"";"";"1 (ODER-Gruppe)";"A1"
-"Prozedur";"Hämodialyse";"http://fhir.de/CodeSystem/bfarm/ops";"8-854";"2024";"";"";"2 (ODER-Gruppe)";"A2a"
-"Laboruntersuchung";"Creatinin [Masse/Volumen] in Serum oder Plasma";"http://loinc.org";"2160-0";"";"Wert: 3 bis 15 mg/dL";"";"2 (ODER-Gruppe)";"A2b"
+"Diagnose";"Diabetes mellitus, während der Schwangerschaft auftretend";"http://fhir.de/CodeSystem/bfarm/icd-10-gm";"O24.4";"2024";"";"";"1 (Einzelkriterium; Gruppen untereinander ODER verknüpft)";"A1"
+"Prozedur";"Hämodialyse";"http://fhir.de/CodeSystem/bfarm/ops";"8-854";"2024";"";"";"2 (Kriterien UND verknüpft; Gruppen untereinander ODER verknüpft)";"A2a"
+"Laboruntersuchung";"Creatinin [Masse/Volumen] in Serum oder Plasma";"http://loinc.org";"2160-0";"";"Wert: 3 bis 15 mg/dL";"";"2 (Kriterien UND verknüpft; Gruppen untereinander ODER verknüpft)";"A2b"

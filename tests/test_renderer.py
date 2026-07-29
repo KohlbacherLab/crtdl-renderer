@@ -300,8 +300,28 @@ def test_csv_export_covers_every_criterion():
     assert rows[0][0] == "Kontext"  # not the original's mislabelled „Modul"
     labels = [r[-1] for r in rows[1:]]
     assert labels == leaf_labels(q.inclusion)
-    # the group column disambiguates what the original leaves ambiguous
-    assert "UND-Gruppe" in rows[1][-2]
+
+
+def test_csv_names_the_operator_that_joins_the_rows():
+    """The rows of one group are joined by the block's INNER operator — OR for the
+    inclusion CNF, AND for the exclusion DNF. Naming the outer operator here would
+    tell the reader the opposite, and the CSV has no other field to correct it."""
+    from crtdl_renderer.render_csv import _criteria_rows
+
+    q = _q([[_c("A"), _c("B")]], [[_c("X"), _c("Y")]])
+    inc = _criteria_rows(q.inclusion)[0][-2]
+    exc = _criteria_rows(q.exclusion)[0][-2]
+    assert "Kriterien ODER verknüpft" in inc and "Gruppen untereinander UND" in inc
+    assert "Kriterien UND verknüpft" in exc and "Gruppen untereinander ODER" in exc
+
+
+def test_csv_keeps_the_interval_overlap_qualifier():
+    from crtdl_renderer.render_csv import _criteria_rows
+
+    crit = {**_c("A"), "timeRestriction": {"afterDate": "2020-01-01",
+                                           "beforeDate": "2020-12-31"}}
+    row = _criteria_rows(_q([[crit]]).inclusion)[0]
+    assert "Überschneidung" in row[6], row[6]
 
 
 def test_unit_comes_from_the_ucum_code_not_the_display():
@@ -342,6 +362,26 @@ def test_malformed_structure_raises_a_readable_error():
         "no criteria at all": {"version": "v", "inclusionCriteria": []},
         "time restriction without bounds": {"version": "v", "inclusionCriteria": [
             [{**_c("A"), "timeRestriction": {}}]]},
+        "unknown comparator": {"version": "v", "inclusionCriteria": [[{
+            **_c("A"), "valueFilter": {"type": "quantity-comparator",
+                                       "comparator": "gte", "value": 5}}]]},
+        "comparator without a value": {"version": "v", "inclusionCriteria": [[{
+            **_c("A"), "valueFilter": {"type": "quantity-comparator",
+                                       "comparator": "gt"}}]]},
+        "empty selectedConcepts": {"version": "v", "inclusionCriteria": [[{
+            **_c("A"), "valueFilter": {"type": "concept", "selectedConcepts": []}}]]},
+        "timeRestriction not an object": {"version": "v", "inclusionCriteria": [[{
+            **_c("A"), "timeRestriction": "2024-01-01"}]]},
+        "afterDate not a string": {"version": "v", "inclusionCriteria": [[{
+            **_c("A"), "timeRestriction": {"afterDate": 1}}]]},
+        # "false" is a non-empty string: bool() would turn it into True
+        "mustHave as a string": {"version": "v", "inclusionCriteria": [[_c("A")]],
+            "dataExtraction": {"attributeGroups": [{"id": "g", "groupReference": "p",
+                "attributes": [{"attributeRef": "a", "mustHave": "false"}]}]}},
+        "linkedGroups as a string": {"version": "v", "inclusionCriteria": [[_c("A")]],
+            "dataExtraction": {"attributeGroups": [{"id": "g", "groupReference": "p",
+                "attributes": [{"attributeRef": "a", "mustHave": False,
+                                "linkedGroups": "xy"}]}]}},
         "nested reference filter": {"version": "v", "inclusionCriteria": [[{
             **_c("A"), "attributeFilters": [{
                 "type": "reference",

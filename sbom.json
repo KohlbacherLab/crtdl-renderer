@@ -39,7 +39,7 @@
       "version": "3.4.9"
     },
     {
-      "bom-ref": "crtdl-renderer==1.1.1",
+      "bom-ref": "crtdl-renderer==1.1.2",
       "description": "Renders MII/FDPG feasibility queries (CRTDL/CCDL) as readable German documents — Markdown, DOCX, PDF, CSV",
       "externalReferences": [
         {
@@ -73,7 +73,7 @@
       ],
       "name": "crtdl-renderer",
       "type": "library",
-      "version": "1.1.1"
+      "version": "1.1.2"
     },
     {
       "bom-ref": "lxml==6.1.1",
@@ -281,7 +281,7 @@
         "python-docx==1.2.0",
         "reportlab==5.0.0"
       ],
-      "ref": "crtdl-renderer==1.1.1"
+      "ref": "crtdl-renderer==1.1.2"
     },
     {
       "ref": "lxml==6.1.1",
@@ -421,9 +421,9 @@
     },
     "component": {
       "type": "application",
-      "bom-ref": "crtdl-renderer==1.1.1",
+      "bom-ref": "crtdl-renderer==1.1.2",
       "name": "crtdl-renderer",
-      "version": "1.1.1",
+      "version": "1.1.2",
       "description": "Renders MII/FDPG feasibility queries (CRTDL/CCDL) as readable German documents",
       "licenses": [
         {

@@ -4,6 +4,26 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.2] — 2026-07-29
+
+### Fixed
+- **The CSV named the wrong boolean operator.** The rows of one group are joined by the
+  block's *inner* operator — OR in the inclusion CNF, AND in the exclusion DNF — but the
+  `Verknüpfungsgruppe` column named the outer one, telling the reader the opposite of what the
+  group means. The column now names both joins explicitly. A test had locked the wrong label in.
+- **The CSV dropped the interval-overlap qualifier**, so `Zeitraum` read as containment while
+  the other formats said „Überschneidung".
+- Value filters are validated against their discriminator: an unknown comparator (`gte`), a
+  comparator without a value, a `quantity-range` with non-numeric bounds and an empty or
+  non-list `selectedConcepts` are refused instead of rendering as constraints that do not exist.
+- A `timeRestriction` that is not an object, or whose dates are not strings, is refused — the
+  latter previously crashed the date formatter.
+- `mustHave` and `includeReferenceOnly` must be real booleans, and `linkedGroups` a list of
+  strings. The string `"false"` is truthy and previously inverted both flags; a string
+  `linkedGroups` was rendered character by character.
+- An explicit `filter.type` now wins over the payload, so a `date` filter carrying stray
+  `codes` is no longer retyped as a token filter with both dates silently discarded.
+
 ## [1.1.1] — 2026-07-29
 
 Correctness fixes from a further audit. Two of these made the document describe a cohort the

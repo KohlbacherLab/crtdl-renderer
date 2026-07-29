@@ -54,17 +54,29 @@ def _row(c, label: str, gruppe: str) -> list[str]:
     tc = c.concepts[0]
     constraints = _criterion_constraints(c)
     attrs = "; ".join(x for x in constraints if not x.startswith("Zeitraum"))
-    zeit = "; ".join(x.split(": ", 1)[-1] for x in constraints if x.startswith("Zeitraum"))
+    # keep the „(Überschneidung)" qualifier: an interval overlap suffices, and
+    # dropping the word would read as containment
+    zeit = "; ".join(x.split(":", 1)[-1].strip() + " (Überschneidung genügt)"
+                     for x in constraints if x.startswith("Zeitraum"))
     return [c.context.display if c.context else "", tc.display, tc.system, tc.code,
             tc.version or "", attrs, zeit, gruppe, label]
 
 
 def _criteria_rows(block: CriteriaBlock) -> list[list[str]]:
     p = block_prefix(block)
-    kind = ("UND-Gruppe" if block.kind == "inclusion" else "ODER-Gruppe")
+    # The rows of one group are joined by the block's INNER operator (OR for the
+    # inclusion CNF, AND for the exclusion DNF); the groups themselves are joined
+    # by the outer one. Naming only the outer operator here would tell the reader
+    # the opposite of what the group means, and the CSV carries no other field
+    # that could correct it.
+    inner = "ODER" if block.kind == "inclusion" else "UND"
+    outer = block.outer_op
     rows = []
     for gi, group in enumerate(block.groups, 1):
-        gruppe = f"{gi} ({kind})"
+        gruppe = (f"{gi} (Kriterien {inner} verknüpft; Gruppen untereinander "
+                  f"{outer} verknüpft)" if len(group.criteria) > 1
+                  else f"{gi} (Einzelkriterium; Gruppen untereinander "
+                       f"{outer} verknüpft)")
         for ci, c in enumerate(group.criteria, 1):
             label = f"{p}{gi}" if len(group.criteria) == 1 else f"{p}{gi}{_letter(ci)}"
             rows.append(_row(c, label, gruppe))
@@ -75,7 +87,8 @@ def _criteria_rows(block: CriteriaBlock) -> list[list[str]]:
                 name = af.attribute.display if af.attribute else "Referenz"
                 for k, rc in enumerate(af.ref_criteria, 1):
                     rows.append(_row(rc, f"{label}r{r}{_letter(k)}",
-                                     f"{gi} → Referenz „{name}“ von {label} (ODER-Gruppe)"))
+                                     f"{gi} → Referenz „{name}“ von {label} "
+                                     f"(Kriterien ODER verknüpft)"))
     return rows
 
 
