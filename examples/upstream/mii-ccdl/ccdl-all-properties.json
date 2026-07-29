@@ -1,0 +1,297 @@
+{
+  "version": "https://medizininformatik-initiative.de/fdpg/ClinicalCohortDefinitionLanguage/v1/schema",
+  "display": "Example-CCDL",
+  "inclusionCriteria": [
+    [
+      {
+        "context": {
+          "code": "Patient",
+          "display": "Patient",
+          "system": "fdpg.mii.cds",
+          "version": "1.0.0"
+        },
+        "termCodes": [
+          {
+            "code": "LL2191-6",
+            "display": "Geschlecht",
+            "system": "http://loinc.org"
+          }
+        ],
+        "valueFilter": {
+          "type": "concept",
+          "selectedConcepts": [
+            {
+              "code": "F",
+              "display": "female",
+              "system": "https://fhir.loinc.org/CodeSystem/$lookup?system=http://loinc.org&code=LL2191-6",
+              "version": ""
+            },
+            {
+              "code": "M",
+              "display": "male",
+              "system": "https://fhir.loinc.org/CodeSystem/$lookup?system=http://loinc.org&code=LL2191-6",
+              "version": ""
+            }
+          ]
+        }
+      }
+    ],
+    [
+      {
+        "context": {
+          "code": "Patient",
+          "display": "Patient",
+          "system": "fdpg.mii.cds",
+          "version": "1.0.0"
+        },
+        "termCodes": [
+          {
+            "code": "30525-0",
+            "display": "Alter",
+            "system": "http://loinc.org"
+          }
+        ],
+        "valueFilter": {
+          "type": "quantity-comparator",
+          "comparator": "gt",
+          "unit": {
+            "code": "a",
+            "display": "Jahr"
+          },
+          "value": 18
+        }
+      }
+    ],
+    [
+      {
+        "context": {
+          "code": "Diagnose",
+          "display": "Diagnose",
+          "system": "fdpg.mii.cds",
+          "version": "1.0.0"
+        },
+        "termCodes": [
+          {
+            "code": "F00",
+            "display": "F00",
+            "system": "http://fhir.de/CodeSystem/dimdi/icd-10-gm"
+          }
+        ]
+      },
+      {
+        "context": {
+          "code": "Diagnose",
+          "display": "Diagnose",
+          "system": "fdpg.mii.cds",
+          "version": "1.0.0"
+        },
+        "termCodes": [
+          {
+            "code": "F09",
+            "display": "F09",
+            "system": "http://fhir.de/CodeSystem/dimdi/icd-10-gm"
+          }
+        ],
+        "timeRestriction": {
+          "beforeDate": "2021-10-09",
+          "afterDate": "2021-09-09"
+        }
+      }
+    ],
+    [
+      {
+        "context": {
+          "code": "Specimen",
+          "system": "fdpg.mii.cds",
+          "version": "1.0.0",
+          "display": "Bioprobe"
+        },
+        "termCodes": [
+          {
+            "code": "5-016.0",
+            "system": "http://fhir.de/CodeSystem/bfarm/ops",
+            "version": "2023",
+            "display": "Schädelbasis, Tumorgewebe"
+          }
+        ],
+        "attributeFilters": [
+          {
+            "type": "reference",
+            "criteria": [
+              {
+                "context": {
+                  "code": "Diagnose",
+                  "system": "fdpg.mii.cds",
+                  "version": "1.0.0",
+                  "display": "Diagnose"
+                },
+                "termCodes": [
+                  {
+                    "code": "C50.0",
+                    "system": "icd-o-3",
+                    "display": "Some cid-o-3 Cancer"
+                  }
+                ],
+                "attributeFilters": [
+                  {
+                    "type": "concept",
+                    "selectedConcepts": [
+                      {
+                        "code": "active",
+                        "system": "http://hl7.org/fhir/",
+                        "display": "active"
+                      }
+                    ],
+                    "attributeCode": {
+                      "code": "status",
+                      "system": "mii.abide",
+                      "display": "status"
+                    }
+                  }
+                ]
+              },
+              {
+                "context": {
+                  "code": "Diagnose",
+                  "system": "fdpg.mii.cds",
+                  "version": "1.0.0",
+                  "display": "Diagnose"
+                },
+                "termCodes": [
+                  {
+                    "code": "C50.1",
+                    "system": "icd-o-3",
+                    "display": "Some cid-o-3 Cancer"
+                  }
+                ]
+              }
+            ],
+            "attributeCode": {
+              "code": "diagnose",
+              "system": "mii.abide",
+              "display": "specimen diagnosis"
+            }
+          }
+        ]
+      }
+    ]
+  ],
+  "exclusionCriteria": [
+    [
+      {
+        "context": {
+          "code": "Patient",
+          "display": "Patient",
+          "system": "fdpg.mii.cds",
+          "version": "1.0.0"
+        },
+        "termCodes": [
+          {
+            "code": "LL2191-6",
+            "display": "Geschlecht",
+            "system": "http://loinc.org"
+          }
+        ],
+        "valueFilter": {
+          "type": "concept",
+          "selectedConcepts": [
+            {
+              "code": "male",
+              "display": "male",
+              "system": "",
+              "version": ""
+            }
+          ]
+        }
+      }
+    ],
+    [
+      {
+        "context": {
+          "code": "Patient",
+          "display": "Patient",
+          "system": "fdpg.mii.cds",
+          "version": "1.0.0"
+        },
+        "termCodes": [
+          {
+            "code": "30525-0",
+            "display": "Alter",
+            "system": "http://loinc.org"
+          }
+        ],
+        "valueFilter": {
+          "type": "quantity-comparator",
+          "comparator": "gt",
+          "unit": {
+            "code": "year",
+            "display": "Jahr"
+          },
+          "value": 65
+        }
+      }
+    ],
+    [
+      {
+        "context": {
+          "code": "Diagnose",
+          "display": "Diagnose",
+          "system": "fdpg.mii.cds",
+          "version": "1.0.0"
+        },
+        "termCodes": [
+          {
+            "code": "F00.9",
+            "display": "F00.9",
+            "system": "http://fhir.de/CodeSystem/dimdi/icd-10-gm"
+          }
+        ]
+      },
+      {
+        "context": {
+          "code": "Patient",
+          "display": "Patient",
+          "system": "fdpg.mii.cds",
+          "version": "1.0.0"
+        },
+        "termCodes": [
+          {
+            "code": "8310-5",
+            "display": "Körpertemperatur",
+            "system": "http://loinc.org"
+          }
+        ],
+        "valueFilter": {
+          "type": "quantity-range",
+          "unit": {
+            "code": "Cel",
+            "display": "°C"
+          },
+          "minValue": 35,
+          "maxValue": 39
+        },
+        "attributeFilters": [
+          {
+            "attributeCode": {
+              "code": "method",
+              "system": "abide",
+              "display": "method"
+            },
+            "type": "concept",
+            "selectedConcepts": [
+              {
+                "code": "LA9370-3",
+                "system": "http://loinc.org",
+                "display": "Axillary"
+              }
+            ]
+          }
+        ],
+        "timeRestriction": {
+          "beforeDate": "2021-10-09",
+          "afterDate": "2021-09-09"
+        }
+      }
+    ]
+  ]
+}

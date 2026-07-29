@@ -1,0 +1,89 @@
+crtdl-renderer
+Copyright 2026 Kohlbacher Lab, University of Tübingen
+
+This product includes software developed at the Kohlbacher Lab,
+Institute for Bioinformatics and Medical Informatics (IBMI),
+University of Tübingen.
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+================================================================================
+Third-party material redistributed in this repository
+================================================================================
+
+1. Example queries under examples/upstream/mii-crtdl/ and examples/upstream/mii-ccdl/
+   -----------------------------------------------------------------------------
+   Source:  https://github.com/medizininformatik-initiative/
+              clinical-resource-transfer-definition-language
+            https://github.com/medizininformatik-initiative/
+              clinical-cohort-definition-language
+   Copyright: Medizininformatik-Initiative (MII)
+   Licence:  Apache License 2.0
+   Changes:  none — the JSON files are redistributed verbatim as test fixtures.
+
+2. Example queries under examples/upstream/torch/
+   -----------------------------------------------------------------------------
+   Source:   https://github.com/medizininformatik-initiative/torch
+             (src/test/resources/CRTDL/)
+   Copyright: Medizininformatik-Initiative (MII)
+   Licence:  Apache License 2.0
+   Changes:  none — redistributed verbatim as test fixtures.
+
+3. Example queries under examples/upstream/cctb/
+   -----------------------------------------------------------------------------
+   Source:   https://github.com/medizininformatik-initiative/cctb
+             (formerly sq2cql; cql/src/test/resources/)
+   Copyright: Medizininformatik-Initiative (MII)
+   Licence:  Apache License 2.0
+   Changes:  filenames prefixed with the originating directory; file contents
+             unmodified.
+
+================================================================================
+Terminology and specifications referenced (not redistributed)
+================================================================================
+
+4. FDPG search ontology
+   -----------------------------------------------------------------------------
+   https://github.com/medizininformatik-initiative/fhir-ontology-generator
+   Apache License 2.0. Release assets (elastic.zip) are downloaded by the user;
+   crtdl_renderer/ontology.py reads them but this repository ships no copy.
+
+5. CRTDL / CCDL specifications
+   -----------------------------------------------------------------------------
+   Clinical Resource Transfer Definition Language and Clinical Cohort Definition
+   Language, Medizininformatik-Initiative, Apache License 2.0.
+   Boolean semantics implemented here follow their published documentation.
+
+6. Code systems whose German designations appear in the curated seed
+   (crtdl_renderer/terminology_de.json)
+   -----------------------------------------------------------------------------
+   ICD-10-GM, OPS, ATC (German version) — Bundesinstitut für Arzneimittel und
+       Medizinprodukte (BfArM). Distribution subject to BfArM terms.
+   LOINC® — Regenstrief Institute, Inc. LOINC is a registered trademark of
+       Regenstrief Institute, Inc. Used under the LOINC licence.
+   SNOMED CT® — SNOMED International. Use in Germany is covered by the national
+       licence held by BfArM.
+   MII Broad Consent value set — Medizininformatik-Initiative.
+   KBV_CS_SFHIR_ICD_DIAGNOSESICHERHEIT — Kassenärztliche Bundesvereinigung (KBV).
+   HL7® FHIR® administrative-gender — Health Level Seven International.
+       HL7 and FHIR are registered trademarks of Health Level Seven International.
+
+   Only short official designations required for interoperability are included.
+   The code systems themselves remain under their respective terms; this project
+   grants no rights to them.
+
+7. Reference implementations consulted for the rendering design
+   -----------------------------------------------------------------------------
+   i2b2 Query Report (i2b2 webclient) — i2b2 Software Licence.
+   OHDSI CIRCE print-friendly templates — Apache License 2.0.
+   dataportal-ui / dataportal-backend (FDPG) — Apache License 2.0.
+   Samply Lens, Samply Sample Locator — Apache License 2.0.
+   No code from these projects is included; they informed the layout only.
+   See docs/layout.md for what was taken from each.
+
+================================================================================
+Runtime dependencies (optional, not bundled)
+================================================================================
+
+   python-docx  — MIT Licence, Copyright (c) Steve Canny
+   reportlab    — BSD 3-Clause Licence, Copyright (c) ReportLab Europe Ltd.

@@ -1,0 +1,264 @@
+{
+  "version": "http://json-schema.org/to-be-done/schema#",
+  "display": "Erwachsene mit Hypertonie und Diabetes mellitus Typ 2 (Demo)",
+  "cohortDefinition": {
+    "version": "https://medizininformatik-initiative.de/fdpg/ClinicalCohortDefinitionLanguage/v1/schema",
+    "display": "Hypertonie + Diabetes, ohne Schwangerschaft",
+    "inclusionCriteria": [
+      [
+        {
+          "context": {
+            "code": "Patient",
+            "system": "fdpg.mii.cds",
+            "version": "1.0.0",
+            "display": "Person"
+          },
+          "termCodes": [
+            {
+              "code": "424144002",
+              "system": "http://snomed.info/sct",
+              "display": "Gegenwärtiges chronologisches Alter"
+            }
+          ],
+          "valueFilter": {
+            "type": "quantity-comparator",
+            "comparator": "ge",
+            "value": 18,
+            "unit": { "code": "a", "display": "Jahre" }
+          }
+        }
+      ],
+      [
+        {
+          "context": {
+            "code": "Diagnose",
+            "system": "fdpg.mii.cds",
+            "version": "1.0.0",
+            "display": "Diagnose"
+          },
+          "termCodes": [
+            {
+              "code": "I10",
+              "system": "http://fhir.de/CodeSystem/bfarm/icd-10-gm",
+              "version": "2024",
+              "display": "Essentielle (primäre) Hypertonie"
+            }
+          ],
+          "timeRestriction": { "afterDate": "2020-01-01", "beforeDate": "2024-12-31" }
+        },
+        {
+          "context": {
+            "code": "Diagnose",
+            "system": "fdpg.mii.cds",
+            "version": "1.0.0",
+            "display": "Diagnose"
+          },
+          "termCodes": [
+            {
+              "code": "I11.9",
+              "system": "http://fhir.de/CodeSystem/bfarm/icd-10-gm",
+              "version": "2024",
+              "display": "Hypertensive Herzkrankheit ohne (kongestive) Herzinsuffizienz"
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "context": {
+            "code": "Diagnose",
+            "system": "fdpg.mii.cds",
+            "version": "1.0.0",
+            "display": "Diagnose"
+          },
+          "termCodes": [
+            {
+              "code": "E11.9",
+              "system": "http://fhir.de/CodeSystem/bfarm/icd-10-gm",
+              "version": "2024",
+              "display": "Diabetes mellitus, Typ 2: Ohne Komplikationen, nicht als entgleist bezeichnet"
+            }
+          ],
+          "attributeFilters": [
+            {
+              "type": "concept",
+              "attributeCode": {
+                "code": "diagnosesicherheit",
+                "system": "mii.abide",
+                "display": "Diagnosesicherheit"
+              },
+              "selectedConcepts": [
+                {
+                  "code": "G",
+                  "system": "https://fhir.kbv.de/CodeSystem/KBV_CS_SFHIR_ICD_DIAGNOSESICHERHEIT",
+                  "display": "gesicherte Diagnose"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "context": {
+            "code": "Laboruntersuchung",
+            "system": "fdpg.mii.cds",
+            "version": "1.0.0",
+            "display": "Laboruntersuchung"
+          },
+          "termCodes": [
+            {
+              "code": "4548-4",
+              "system": "http://loinc.org",
+              "display": "Hemoglobin A1c/Hemoglobin.total in Blood"
+            }
+          ],
+          "valueFilter": {
+            "type": "quantity-comparator",
+            "comparator": "gt",
+            "value": 7.0,
+            "unit": { "code": "%", "display": "%" }
+          },
+          "timeRestriction": { "afterDate": "2022-01-01" }
+        }
+      ],
+      [
+        {
+          "context": {
+            "code": "Medikation",
+            "system": "fdpg.mii.cds",
+            "version": "1.0.0",
+            "display": "Medikation"
+          },
+          "termCodes": [
+            {
+              "code": "A10BA02",
+              "system": "http://fhir.de/CodeSystem/bfarm/atc",
+              "version": "2024",
+              "display": "Metformin"
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "context": {
+            "code": "Einwilligung",
+            "system": "fdpg.mii.cds",
+            "version": "1.0.0",
+            "display": "Einwilligung"
+          },
+          "termCodes": [
+            {
+              "code": "2.16.840.1.113883.3.1937.777.24.5.3.8",
+              "system": "urn:oid:2.16.840.1.113883.3.1937.777.24.5.3",
+              "version": "1.0.7",
+              "display": "MDAT wissenschaftlich nutzen EU DSGVO NIVEAU"
+            }
+          ]
+        }
+      ]
+    ],
+    "exclusionCriteria": [
+      [
+        {
+          "context": {
+            "code": "Diagnose",
+            "system": "fdpg.mii.cds",
+            "version": "1.0.0",
+            "display": "Diagnose"
+          },
+          "termCodes": [
+            {
+              "code": "O24.4",
+              "system": "http://fhir.de/CodeSystem/bfarm/icd-10-gm",
+              "version": "2024",
+              "display": "Diabetes mellitus, während der Schwangerschaft auftretend"
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "context": {
+            "code": "Prozedur",
+            "system": "fdpg.mii.cds",
+            "version": "1.0.0",
+            "display": "Prozedur"
+          },
+          "termCodes": [
+            {
+              "code": "8-854",
+              "system": "http://fhir.de/CodeSystem/bfarm/ops",
+              "version": "2024",
+              "display": "Hämodialyse"
+            }
+          ]
+        },
+        {
+          "context": {
+            "code": "Laboruntersuchung",
+            "system": "fdpg.mii.cds",
+            "version": "1.0.0",
+            "display": "Laboruntersuchung"
+          },
+          "termCodes": [
+            {
+              "code": "2160-0",
+              "system": "http://loinc.org",
+              "display": "Creatinine [Mass/volume] in Serum or Plasma"
+            }
+          ],
+          "valueFilter": {
+            "type": "quantity-range",
+            "minValue": 3.0,
+            "maxValue": 15.0,
+            "unit": { "code": "mg/dL", "display": "mg/dl" }
+          }
+        }
+      ]
+    ]
+  },
+  "dataExtraction": {
+    "attributeGroups": [
+      {
+        "id": "grp-patient",
+        "groupReference": "https://www.medizininformatik-initiative.de/fhir/core/modul-person/StructureDefinition/Patient",
+        "attributes": [
+          { "attributeRef": "Patient.gender", "mustHave": false },
+          { "attributeRef": "Patient.birthDate", "mustHave": true }
+        ]
+      },
+      {
+        "id": "grp-labor",
+        "name": "HbA1c-Laborwerte",
+        "groupReference": "https://www.medizininformatik-initiative.de/fhir/core/modul-labor/StructureDefinition/ObservationLab",
+        "attributes": [
+          { "attributeRef": "Observation.code", "mustHave": false },
+          { "attributeRef": "Observation.value", "mustHave": true },
+          { "attributeRef": "Observation.encounter", "mustHave": false, "linkedGroups": ["grp-fall"] }
+        ],
+        "filter": [
+          {
+            "type": "token",
+            "name": "code",
+            "codes": [
+              { "code": "4548-4", "system": "http://loinc.org", "display": "Hemoglobin A1c/Hemoglobin.total in Blood" },
+              { "code": "17856-6", "system": "http://loinc.org", "display": "Hemoglobin A1c/Hemoglobin.total in Blood by HPLC" }
+            ]
+          },
+          { "type": "date", "name": "date", "start": "2022-01-01", "end": "2024-12-31" }
+        ]
+      },
+      {
+        "id": "grp-fall",
+        "groupReference": "https://www.medizininformatik-initiative.de/fhir/core/modul-fall/StructureDefinition/KontaktGesundheitseinrichtung",
+        "includeReferenceOnly": true,
+        "attributes": [
+          { "attributeRef": "Encounter.period", "mustHave": false },
+          { "attributeRef": "Encounter.diagnosis", "mustHave": false }
+        ]
+      }
+    ]
+  }
+}

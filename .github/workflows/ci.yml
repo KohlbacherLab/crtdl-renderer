@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: pip install -e ".[all]"
+      - name: Self-checks
+        run: python tests/test_renderer.py
+      - name: Render every example in every format
+        run: |
+          mkdir -p out
+          for f in examples/*.json examples/upstream/*/*.json; do
+            crtdl-render "$f" -f all -o out/ > /dev/null || { echo "FAILED: $f"; exit 1; }
+          done
+          echo "rendered $(ls out | wc -l) files"
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build twine
+      - run: python -m build
+      - run: twine check dist/*

@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+out/
+output/
+
+# terminology caches built from the FDPG ontology release (see docs/terminology.md)
+elastic.zip
+ontology_de.json
