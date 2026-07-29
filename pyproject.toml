@@ -1,6 +1,6 @@
 [project]
 name = "crtdl-renderer"
-version = "0.1.0"
+version = "1.0.0"
 description = "Renders MII/FDPG feasibility queries (CRTDL/CCDL) as readable German documents — Markdown, DOCX, PDF, CSV"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -9,7 +9,7 @@ license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "Kohlbacher Lab, University of Tübingen" }]
 keywords = ["fhir", "mii", "fdpg", "crtdl", "ccdl", "feasibility", "cohort", "medical-informatics"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Healthcare Industry",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3.11",

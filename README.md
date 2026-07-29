@@ -107,9 +107,14 @@ runs against all of them.
 
 ## Status
 
-Alpha. Exercised against 56 queries from the CRTDL and CCDL specs, TORCH's test resources and
-cctb's CQL corpus. Not yet tested against a production FDPG export — if you have one, a bug
-report with it attached is the most useful thing you could send.
+1.0 — the command-line interface and the output structure are stable; breaking either takes a
+major version.
+
+Exercised against 57 queries from the CRTDL and CCDL specifications, TORCH's test resources
+and cctb's CQL corpus. **Not yet validated against a production FDPG export**: every fixture
+comes from a spec repository or a reference implementation, and those already deviate from the
+published schema in six documented ways, so live exports may hold a seventh. If you have a real
+query, a bug report with it attached is the most useful thing you could send.
 
 ## Licence and attribution
 

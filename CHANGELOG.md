@@ -4,9 +4,23 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [1.0.0] — 2026-07-29
+
+First stable release. Same code as `0.1.0`, promoted after the rendered examples were
+published and CI was verified green on Python 3.11–3.13.
+
+From here the command-line interface and the output structure are considered stable; changes
+that would break either get a major version.
+
+**Not yet validated against a production FDPG export.** Every example this was tested against
+comes from a specification repository or a reference implementation's test resources. Those
+already disagree with the published schema in six documented ways (see `docs/format.md`), so
+live exports may well contain a seventh. A bug report with a real query attached is the most
+useful contribution right now.
+
 ## [0.1.0] — 2026-07-29
 
-First public release. Alpha: the output is stable enough to read, the API is not stable.
+Initial packaging of the renderer.
 
 ### Added
 - Parser for CRTDL and bare CCDL into a typed hierarchical intermediate representation,
@@ -30,4 +44,5 @@ First public release. Alpha: the output is stable enough to read, the API is not
 - German display is `display.de || display.original`; reading `de` alone silently drops every
   BfArM code system.
 
+[1.0.0]: https://github.com/KohlbacherLab/crtdl-renderer/releases/tag/v1.0.0
 [0.1.0]: https://github.com/KohlbacherLab/crtdl-renderer/releases/tag/v0.1.0
