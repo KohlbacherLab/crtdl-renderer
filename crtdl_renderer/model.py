@@ -151,6 +151,7 @@ class AttributeGroup:
     attributes: list[Attribute]
     token_filters: list[TokenFilter]
     date_filters: list[DateFilter]
+    unknown_filters: list[str] = field(default_factory=list)
 
     @property
     def module_label(self) -> str:
@@ -227,25 +228,62 @@ class Parser:
             f.unit = Unit(code=u.get("code", ""), display=u.get("display", ""))
         return f
 
-    def attribute_filter(self, af: dict[str, Any]) -> AttributeFilter:
+    def attribute_filter(self, af: dict[str, Any],
+                         in_reference: bool = False) -> AttributeFilter:
         kind = af.get("type", "")
         attr = self.concept(af["attributeCode"]) if af.get("attributeCode") else None
         if kind == "reference":
-            crits = [self.criterion(c) for c in af.get("criteria", [])]
+            if in_reference:
+                raise CrtdlParseError(
+                    "Ein Referenzfilter darf laut CCDL keinen weiteren Referenzfilter "
+                    "enthalten. Eine solche Verschachtelung ließe sich nicht in allen "
+                    "Ausgabeformaten vollständig darstellen.")
+            criteria = af.get("criteria")
+            if not isinstance(criteria, list) or not criteria:
+                raise CrtdlParseError(
+                    "Ein Referenzfilter benötigt eine nicht-leere Liste \u201ecriteria\u201c.")
+            for c in criteria:
+                if not isinstance(c, dict):
+                    raise CrtdlParseError(
+                        f"Referenzkriterium ist kein Objekt, gefunden: {type(c).__name__}.")
+            crits = [self.criterion(c, in_reference=True) for c in criteria]
             return AttributeFilter(kind=kind, attribute=attr, ref_criteria=crits)
         return AttributeFilter(kind=kind, attribute=attr, value=self.value_filter(af))
 
     # -- criteria ----------------------------------------------------------
-    def criterion(self, c: dict[str, Any]) -> Criterion:
-        ctx = self.concept(c["context"]) if c.get("context") else None
-        concepts = [self.concept(tc) for tc in c.get("termCodes", [])]
-        if not concepts:
-            raise CrtdlParseError("Kriterium ohne termCodes")
-        vf = self.value_filter(c["valueFilter"]) if c.get("valueFilter") else None
-        afs = [self.attribute_filter(a) for a in c.get("attributeFilters", [])]
+    def criterion(self, c: dict[str, Any], in_reference: bool = False) -> Criterion:
+        ctx = self.concept(c["context"]) if isinstance(c.get("context"), dict) else None
+        raw_codes = c.get("termCodes")
+        if not isinstance(raw_codes, list) or not raw_codes:
+            raise CrtdlParseError("Kriterium ohne termCodes.")
+        for tc in raw_codes:
+            if not isinstance(tc, dict):
+                raise CrtdlParseError(
+                    f"termCode ist kein Objekt, gefunden: {type(tc).__name__}.")
+        concepts = [self.concept(tc) for tc in raw_codes]
+        vf = None
+        if c.get("valueFilter") is not None:
+            if not isinstance(c["valueFilter"], dict):
+                raise CrtdlParseError(
+                    f"valueFilter muss ein Objekt sein, gefunden: "
+                    f"{type(c['valueFilter']).__name__}.")
+            vf = self.value_filter(c["valueFilter"])
+        raw_afs = c.get("attributeFilters") or []
+        if not isinstance(raw_afs, list):
+            raise CrtdlParseError(
+                f"attributeFilters muss eine Liste sein, gefunden: {type(raw_afs).__name__}.")
+        for a in raw_afs:
+            if not isinstance(a, dict):
+                raise CrtdlParseError(
+                    f"attributeFilter ist kein Objekt, gefunden: {type(a).__name__}.")
+        afs = [self.attribute_filter(a, in_reference=in_reference) for a in raw_afs]
         tr = None
-        if c.get("timeRestriction"):
+        if isinstance(c.get("timeRestriction"), dict):
             t = c["timeRestriction"]
+            if not (t.get("afterDate") or t.get("beforeDate")):
+                raise CrtdlParseError(
+                    "timeRestriction benötigt afterDate oder beforeDate; ohne beide wäre "
+                    "die Einschränkung wirkungslos und würde im Dokument fehlen.")
             tr = TimeRestriction(after=t.get("afterDate"), before=t.get("beforeDate"))
         return Criterion(context=ctx, concepts=concepts, value_filter=vf,
                          attribute_filters=afs, time_restriction=tr)
@@ -265,7 +303,14 @@ class Parser:
                     f"{type(grp).__name__}. Die äußere Liste enthält Gruppen, "
                     f"die innere die Kriterien.")
             if not grp:
-                continue
+                # An empty inner array is not a no-op: in the inclusion CNF it is an
+                # empty disjunction (FALSE, so nobody matches), in the exclusion DNF an
+                # empty conjunction (TRUE, so everybody is excluded). Dropping it would
+                # present a cohort the query does not describe.
+                raise CrtdlParseError(
+                    f"{field}[{i}] ist leer. Eine leere Gruppe verändert die Bedeutung "
+                    f"der Anfrage (Einschluss: niemand erfüllt sie; Ausschluss: alle "
+                    f"werden ausgeschlossen) und wird nicht stillschweigend übergangen.")
             for j, c in enumerate(grp):
                 if not isinstance(c, dict):
                     raise CrtdlParseError(
@@ -277,7 +322,7 @@ class Parser:
 
     # -- data extraction ---------------------------------------------------
     def attribute_group(self, g: dict[str, Any]) -> AttributeGroup:
-        tokens, dates = [], []
+        tokens, dates, unknown = [], [], []
         for flt in g.get("filter", []):
             kind = flt.get("type")
             # The CRTDL schema allows any string as filter type; classify by the
@@ -288,6 +333,8 @@ class Parser:
             elif kind == "date" or flt.get("start") or flt.get("end"):
                 dates.append(DateFilter(name=flt.get("name", ""),
                                         start=flt.get("start"), end=flt.get("end")))
+            else:
+                unknown.append(f"{flt.get('name') or '?'} (Typ „{kind or '?'}“)")
         attrs = [Attribute(ref=a.get("attributeRef", ""), must_have=bool(a.get("mustHave")),
                            linked_groups=a.get("linkedGroups", []) or [])
                  for a in g.get("attributes", [])]
@@ -295,6 +342,7 @@ class Parser:
             id=g.get("id", ""), name=g.get("name"), group_reference=g.get("groupReference", ""),
             include_reference_only=bool(g.get("includeReferenceOnly")),
             attributes=attrs, token_filters=tokens, date_filters=dates,
+            unknown_filters=unknown,
         )
 
     # -- entry point -------------------------------------------------------
@@ -308,7 +356,11 @@ class Parser:
                 f"cohortDefinition muss ein Objekt sein, gefunden: {type(cohort).__name__}.")
         if "inclusionCriteria" not in cohort:
             raise CrtdlParseError(
-                "Keine inclusionCriteria gefunden — weder auf oberster Ebene noch in cohortDefinition.")
+                "Keine inclusionCriteria gefunden — weder auf oberster Ebene noch in "
+                "cohortDefinition.")
+        if not cohort["inclusionCriteria"]:
+            raise CrtdlParseError(
+                "inclusionCriteria ist leer; die CCDL verlangt mindestens eine Bedingung.")
         # dataExtraction may sit beside cohortDefinition (schema) or inside it (README example)
         extraction = data.get("dataExtraction") or cohort.get("dataExtraction") or {}
         inclusion = self.block("inclusion", cohort["inclusionCriteria"])

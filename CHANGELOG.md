@@ -4,6 +4,42 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] — 2026-07-29
+
+Correctness fixes from a further audit. Two of these made the document describe a cohort the
+query did not encode, which is the failure this tool exists to prevent.
+
+### Fixed
+- **Nested `reference` filters are refused.** The CCDL forbids them; the parser accepted them
+  and the outputs then disagreed — the card layout showed the nested branch while the table,
+  the formula and the CSV dropped it, so the document's own „genau einmal referenziert"
+  guarantee was false.
+- **Empty criterion groups are refused.** An empty inner array is FALSE in the inclusion CNF
+  and TRUE in the exclusion DNF. Dropping it turned an unsatisfiable query into a plausible
+  one. An empty `inclusionCriteria` is refused for the same reason.
+- **A `timeRestriction` with neither bound is refused** instead of vanishing from every format.
+- **Attribute-group filters of unrecognised shape are shown** with a warning instead of being
+  dropped.
+- **The AND between multiple `attributeFilters` is now visible**; a list of them previously
+  read exactly like alternatives.
+- **Markdown output escapes `<`, `>`, `&`, `*` and `_`**, not just `|`. Terminology text can
+  come from a server and must not become live markup.
+- **Impossible dates** such as `2021-13-45` are marked rather than formatted as `45.13.2021`.
+- **A unit whose display contradicts a curated German rendering is reported** (`a`/`Monat`),
+  while legitimate spelling differences (`a`/`Jahre`, `Cel`/`°C`) are not.
+- **`--online` writes back only the fetched entries**, merged into the file given by `--cache`,
+  instead of rewriting the merged in-memory cache — which folded the packaged seed into the
+  user's file and rewrote tens of megabytes per run. An unwritable path warns instead of
+  crashing.
+- Wrong-typed `termCodes`, `valueFilter` and `attributeFilters` report the offending path.
+- The legend now also inspects criteria nested inside reference filters.
+
+### Changed
+- `docs/format.md` documents what is refused and why; the previous claim that only a missing
+  `inclusionCriteria` is rejected was no longer true.
+- Design precedents moved from `docs/layout.md` into `docs/design-decisions.md`, leaving the
+  layout document to describe the output rather than its provenance.
+
 ## [1.1.0] — 2026-07-29
 
 ### Fixed

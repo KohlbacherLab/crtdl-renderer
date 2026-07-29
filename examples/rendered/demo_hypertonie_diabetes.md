@@ -33,12 +33,12 @@ Eine Person gehört zur Kohorte, wenn **alle Einschlussbedingungen (E1–E6)** e
 **UND**
 
 > **E3** [Diagnose] Diabetes mellitus, Typ 2: Ohne Komplikationen (E11.9, ICD-10-GM 2024)
-> ↳ Diagnosesicherheit: Gesicherte Diagnose (G, KBV_CS_SFHIR_ICD_DIAGNOSESICHERHEIT)
+> ↳ Diagnosesicherheit: Gesicherte Diagnose (G, KBV\_CS\_SFHIR\_ICD\_DIAGNOSESICHERHEIT)
 
 **UND**
 
 > **E4** [Laboruntersuchung] Hämoglobin A1c/Hämoglobin.gesamt in Blut (4548-4, LOINC)
-> ↳ Wert: > 7 %
+> ↳ Wert: &gt; 7 %
 > ↳ Zeitraum (Überschneidung): ab 01.01.2022
 
 **UND**
@@ -76,8 +76,8 @@ Eine Person gehört zur Kohorte, wenn **alle Einschlussbedingungen (E1–E6)** e
 
 | Modul / Profil | Filter | Attribute |
 |---|---|---|
-| Person — Patient | — | Patient.gender<br>Patient.birthDate **(Pflicht)** |
-| HbA1c-Laborwerte | code: Hämoglobin A1c/Hämoglobin.gesamt in Blut (4548-4, LOINC) ODER Hämoglobin A1c/Hämoglobin.gesamt in Blut mittels Hochleistungsflüssigkeitschromatografie (HPLC) (17856-6, LOINC)<br>date: 01.01.2022 bis 31.12.2024 | Observation.code<br>Observation.value **(Pflicht)**<br>Observation.encounter → Fall — KontaktGesundheitseinrichtung |
+| Person — Patient | — | Patient.gender<br>Patient.birthDate \*\*(Pflicht)\*\* |
+| HbA1c-Laborwerte | code: Hämoglobin A1c/Hämoglobin.gesamt in Blut (4548-4, LOINC) ODER Hämoglobin A1c/Hämoglobin.gesamt in Blut mittels Hochleistungsflüssigkeitschromatografie (HPLC) (17856-6, LOINC)<br>date: 01.01.2022 bis 31.12.2024 | Observation.code<br>Observation.value \*\*(Pflicht)\*\*<br>Observation.encounter → Fall — KontaktGesundheitseinrichtung |
 | Fall — KontaktGesundheitseinrichtung (nur als Referenz) | — | Encounter.period<br>Encounter.diagnosis |
 
 > **(Pflicht): Fehlt das Attribut bei einer Person, wird diese vollständig von der Extraktion ausgeschlossen (mustHave-Regel).**
@@ -89,7 +89,7 @@ Eine Person gehört zur Kohorte, wenn **alle Einschlussbedingungen (E1–E6)** e
 | ATC | `http://fhir.de/CodeSystem/bfarm/atc` | 2024 |
 | FDPG | `fdpg.mii.cds` | 1.0.0 |
 | ICD-10-GM | `http://fhir.de/CodeSystem/bfarm/icd-10-gm` | 2024 |
-| KBV_CS_SFHIR_ICD_DIAGNOSESICHERHEIT | `https://fhir.kbv.de/CodeSystem/KBV_CS_SFHIR_ICD_DIAGNOSESICHERHEIT` | — |
+| KBV\_CS\_SFHIR\_ICD\_DIAGNOSESICHERHEIT | `https://fhir.kbv.de/CodeSystem/KBV\_CS\_SFHIR\_ICD\_DIAGNOSESICHERHEIT` | — |
 | LOINC | `http://loinc.org` | — |
 | MII-Consent | `urn:oid:2.16.840.1.113883.3.1937.777.24.5.3` | 1.0.7 |
 | OPS | `http://fhir.de/CodeSystem/bfarm/ops` | 2024 |

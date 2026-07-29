@@ -47,13 +47,11 @@ Implicit operators that also have to be rendered:
 | `attributeFilter` of type `reference`, its `criteria[]` | OR — see below |
 | `filter` codes in an attribute group | OR |
 
-### The reference-filter join, verified
+### The reference-filter join
 
 The specification does not say how the criteria inside a `reference` attribute filter combine.
-It is **OR**, verified in the reference translator rather than assumed:
-`cctb`'s `ReferenceModifier.getReferenceExpr()` reduces them with `Container.UNION` — a
-`UnionExpression`, chosen over the `AND` combiner defined on the adjacent line. A match on any
-one referenced criterion satisfies the filter.
+It is **OR**: a match on any one referenced criterion satisfies the filter. This follows the
+reference translator (`cctb`), which unions them.
 
 ### Time restrictions are intersections
 
@@ -95,7 +93,26 @@ Real files disagree with the published schema. All of these parse:
 
 The CRTDL schema also `$ref`s `#/definitions/cohortDefinition` while the CCDL schema uses
 `$defs` at its root, so the published pair cannot resolve as-is. Parsing is therefore lenient
-by design; a file is rejected only if no `inclusionCriteria` can be found.
+about *presentation* — missing versions, odd system strings, unexpected displays — but strict
+about anything that would change what the cohort means.
+
+### Rejected input
+
+A file is refused, with the offending path named, when:
+
+| Condition | Why |
+|---|---|
+| no `inclusionCriteria` anywhere, or an empty one | the CCDL requires at least one condition |
+| an empty inner array | an empty disjunction is FALSE in the inclusion CNF and an empty conjunction is TRUE in the exclusion DNF; dropping it would present a different cohort |
+| a `reference` filter inside a `reference` filter | forbidden by the CCDL, and not representable in every output format |
+| a `reference` filter with no `criteria` | it would constrain nothing |
+| a `timeRestriction` with neither `afterDate` nor `beforeDate` | invalid per the schema, and it would silently vanish from the document |
+| a criterion without `termCodes` | there is no concept to render |
+| wrong types — root not an object, criteria not lists of lists, a criterion that is not an object, `termCodes`/`valueFilter`/`attributeFilters` of the wrong shape | the structure cannot be interpreted; guessing would be worse than refusing |
+
+Anything the renderer cannot interpret but *can* still show — an unknown `valueFilter.type`, an
+attribute-group filter of unrecognised shape, a unit whose display contradicts its code, a
+malformed date — is rendered with a visible warning rather than dropped.
 
 ## Consent
 

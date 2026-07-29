@@ -55,14 +55,24 @@ def _de_date(value: str | None) -> str:
     parts = value.split("-")
     if len(parts) == 3 and all(p.isdigit() for p in parts) and len(parts[0]) == 4:
         y, m, d = parts
+        try:                       # reject 2021-13-45 rather than dressing it up
+            date(int(y), int(m), int(d))
+        except ValueError:
+            return f"{value} (ungültiges Datum)"
         return f"{int(d):02d}.{int(m):02d}.{y}"
     return value
 
 
-def _same_unit(display: str, code: str) -> bool:
-    """UCUM treats `L` and `l` as the same litre symbol, so `mg/dl` and `mg/dL`
-    denote one unit. Anything else that differs is a real disagreement."""
-    return display.strip().lower() == code.strip().lower()
+def _same_unit(display: str, other: str) -> bool:
+    """Whether two unit spellings denote the same thing.
+
+    UCUM treats `L` and `l` as one litre symbol, so `mg/dl` and `mg/dL` agree.
+    Punctuation is ignored too, so the German rendering `Jahr(e)` agrees with an
+    export that writes `Jahre`. Anything beyond that is a real disagreement.
+    """
+    def norm(x: str) -> str:
+        return "".join(ch for ch in x.lower() if ch.isalnum())
+    return norm(display) == norm(other)
 
 
 def unit_label(u: Unit | None) -> tuple[str, str | None]:
@@ -76,14 +86,13 @@ def unit_label(u: Unit | None) -> tuple[str, str | None]:
     if not u:
         return "", None
     code, disp = (u.code or "").strip(), (u.display or "").strip()
-    if code in UCUM_DE:            # curated German rendering of a known code
-        return UCUM_DE[code], None
     if not code:
         return disp, None
-    if not disp or _same_unit(disp, code):
-        return code, None
-    return code, (f"⚠ Einheit im Export widersprüchlich: UCUM-Code „{code}“, "
-                  f"Bezeichnung „{disp}“ — dargestellt wird der Code.")
+    shown = UCUM_DE.get(code, code)
+    if not disp or _same_unit(disp, code) or _same_unit(disp, shown):
+        return shown, None
+    return shown, (f"⚠ Einheit im Export widersprüchlich: UCUM-Code „{code}“, "
+                   f"Bezeichnung „{disp}“ — dargestellt wird der Code.")
 
 
 def _unit(u: Unit | None) -> str:
@@ -124,11 +133,14 @@ def _criterion_constraints(c: Criterion) -> list[str]:
     if c.value_filter:
         lines.append(f"Wert: {_value_filter_text(c.value_filter)}")
         lines += _unit_warnings(c.value_filter)
-    for af in c.attribute_filters:
-        if af.kind == "reference":
-            continue  # rendered as nested rows
+    plain = [af for af in c.attribute_filters if af.kind != "reference"]
+    for n, af in enumerate(plain):
         name = af.attribute.display if af.attribute else "Attribut"
-        lines.append(f"{name}: {_value_filter_text(af.value)}" if af.value else name)
+        # attributeFilters are AND-joined; without the lead-in a list of them
+        # reads exactly like alternatives
+        lead = "" if n == 0 else "und "
+        lines.append(f"{lead}{name}: {_value_filter_text(af.value)}" if af.value
+                     else f"{lead}{name}")
         lines += _unit_warnings(af.value)
     if c.time_restriction:
         # CCDL: an intersection of the criterion's interval with this one suffices.
@@ -183,6 +195,7 @@ def group_filters(g) -> list[str]:
              for tf in g.token_filters]
     lines += [f"{df.name}: {_de_date(df.start) or '…'} bis {_de_date(df.end) or '…'}"
               for df in g.date_filters]
+    lines += [f"⚠ nicht interpretierter Filter: {u}" for u in g.unknown_filters]
     return lines
 
 
@@ -238,10 +251,16 @@ def legend_for(q: Query) -> list[tuple[str, str]]:
     which sends the reader looking for something that is not there.
     """
     def crits():
+        def walk(c):
+            yield c
+            for af in c.attribute_filters:
+                for rc in af.ref_criteria:
+                    yield from walk(rc)
         for block in (q.inclusion, q.exclusion):
             if block:
                 for g in block.groups:
-                    yield from g.criteria
+                    for c in g.criteria:
+                        yield from walk(c)
 
     has_groups = any(len(g.criteria) > 1
                      for b in (q.inclusion, q.exclusion) if b for g in b.groups)
@@ -583,8 +602,15 @@ _INDENT = "&emsp;&emsp;"
 
 
 def _esc(text: str) -> str:
-    """Pipes inside code displays would otherwise break the GFM table."""
-    return text.replace("|", "\\|")
+    """Neutralise Markdown/HTML in values that come from a terminology server.
+
+    A pipe would break a GFM table; `<`, `>` and `&` would render as live markup;
+    `*` and `_` would emphasise. None of it is ours to interpret.
+    """
+    for char, repl in (("&", "&amp;"), ("<", "&lt;"), (">", "&gt;"),
+                       ("|", "\\|"), ("*", "\\*"), ("_", "\\_")):
+        text = text.replace(char, repl)
+    return text
 
 
 def criteria_head(block: CriteriaBlock) -> list[str]:

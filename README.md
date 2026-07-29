@@ -96,6 +96,7 @@ its own rule out in words. Full notes in [docs/format.md](docs/format.md).
 
 - [docs/format.md](docs/format.md) — CRTDL/CCDL structure, boolean semantics, tolerated deviations
 - [docs/layout.md](docs/layout.md) — the rendering design and its rules
+- [docs/design-decisions.md](docs/design-decisions.md) — the precedents those rules follow
 - [docs/terminology.md](docs/terminology.md) — German display resolution and the ontology import
 
 ## Development

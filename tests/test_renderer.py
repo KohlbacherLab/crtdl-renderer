@@ -186,7 +186,6 @@ def test_degenerate_inputs_render_without_crashing():
     bare = {"termCodes": [{"code": "X", "system": "", "display": ""}]}
     cases = {
         "kein context": [[bare]],
-        "leere Gruppe": [[], [bare]],
         "Menge ohne Einheit": [[{**bare, "valueFilter": {
             "type": "quantity-comparator", "comparator": "ne", "value": 3.5}}]],
         "Bereich ohne Einheit": [[{**bare, "valueFilter": {
@@ -337,6 +336,20 @@ def test_malformed_structure_raises_a_readable_error():
         "criteria not a list": {"version": "v", "inclusionCriteria": {"a": 1}},
         "groups not nested": {"version": "v", "inclusionCriteria": [{"code": "x"}]},
         "criterion is a string": {"version": "v", "inclusionCriteria": [["x"]]},
+        # an empty inner array is FALSE in the inclusion CNF — dropping it would
+        # present a cohort the query does not describe
+        "empty group": {"version": "v", "inclusionCriteria": [[], [_c("A")]]},
+        "no criteria at all": {"version": "v", "inclusionCriteria": []},
+        "time restriction without bounds": {"version": "v", "inclusionCriteria": [
+            [{**_c("A"), "timeRestriction": {}}]]},
+        "nested reference filter": {"version": "v", "inclusionCriteria": [[{
+            **_c("A"), "attributeFilters": [{
+                "type": "reference",
+                "attributeCode": {"code": "r", "system": "s", "display": "R"},
+                "criteria": [{**_c("B"), "attributeFilters": [{
+                    "type": "reference",
+                    "attributeCode": {"code": "r2", "system": "s", "display": "R2"},
+                    "criteria": [_c("C")]}]}]}]}]]},
     }
     for name, bad in cases.items():
         try:

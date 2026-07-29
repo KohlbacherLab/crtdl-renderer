@@ -21,7 +21,8 @@ Eine Person gehört zur Kohorte, wenn **alle Einschlussbedingungen (E1–E4)** e
 **UND**
 
 > **E2** [Patient] Alter (30525-0, LOINC)
-> ↳ Wert: > 18 Jahr(e)
+> ↳ Wert: &gt; 18 Jahr(e)
+> ↳ ⚠ Einheit im Export widersprüchlich: UCUM-Code „a“, Bezeichnung „Jahr“ — dargestellt wird der Code.
 
 **UND**
 
@@ -61,7 +62,7 @@ Eine Person gehört zur Kohorte, wenn **alle Einschlussbedingungen (E1–E4)** e
 **ODER**
 
 > **A2** [Patient] Alter (30525-0, LOINC) → Ausschluss
-> ↳ Wert: > 65 year
+> ↳ Wert: &gt; 65 year
 > ↳ ⚠ Einheit im Export widersprüchlich: UCUM-Code „year“, Bezeichnung „Jahr“ — dargestellt wird der Code.
 
 **ODER**
@@ -86,7 +87,7 @@ Eine Person gehört zur Kohorte, wenn **alle Einschlussbedingungen (E1–E4)** e
 | ICD-10-GM | `http://fhir.de/CodeSystem/dimdi/icd-10-gm` | — |
 | ICD-O-3 | `icd-o-3` | — |
 | LOINC ⚠ | `http://loinc.org` | — |
-| LOINC ⚠ | `https://fhir.loinc.org/CodeSystem/$lookup?system=http://loinc.org&code=LL2191-6` | — |
+| LOINC ⚠ | `https://fhir.loinc.org/CodeSystem/$lookup?system=http://loinc.org&amp;code=LL2191-6` | — |
 | OPS | `http://fhir.de/CodeSystem/bfarm/ops` | 2023 |
 | abide | `abide` | — |
 | fhir | `http://hl7.org/fhir/` | — |

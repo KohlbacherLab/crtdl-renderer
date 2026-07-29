@@ -19,7 +19,9 @@ Optional online mode fills cache misses via FHIR CodeSystem/$lookup
 """
 from __future__ import annotations
 
+import contextlib
 import json
+import sys
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -65,6 +67,7 @@ class Resolver:
         curated file, which is shipped content rather than a scratch area.
         """
         self.cache_path = Path(cache_path) if cache_path else None
+        self._fetched: dict[str, str] = {}   # online hits only
         self.online = online
         self.tx_base = tx_base
         self._dirty = False
@@ -128,6 +131,7 @@ class Resolver:
             hit = self._lookup_online(sys_c, code, version)
             if hit:
                 self.cache[keys[0]] = hit
+                self._fetched[keys[0]] = hit
                 self._dirty = True
                 return hit, "cache"
         if embedded_display:
@@ -165,9 +169,23 @@ class Resolver:
         return display
 
     def save_cache(self) -> None:
-        """Persist online lookups, if there is a caller-supplied cache to hold them."""
-        if self._dirty and self.cache_path:
+        """Merge online lookups into the caller-supplied cache file.
+
+        Only the fetched entries are written back. Rewriting the whole in-memory
+        cache would fold the packaged curated seed into the user's file and, with
+        a bulk ontology import loaded, rewrite tens of megabytes on every run.
+        """
+        if not (self._dirty and self.cache_path and self._fetched):
+            return
+        existing: dict[str, str] = {}
+        with contextlib.suppress(FileNotFoundError, json.JSONDecodeError):
+            existing = json.loads(self.cache_path.read_text(encoding="utf-8"))
+        existing.update(self._fetched)
+        try:
             self.cache_path.write_text(
-                json.dumps(self.cache, ensure_ascii=False, indent=2, sort_keys=True),
+                json.dumps(existing, ensure_ascii=False, indent=2, sort_keys=True),
                 encoding="utf-8")
-            self._dirty = False
+        except OSError as exc:
+            print(f"Warnung: Cache {self.cache_path} nicht schreibbar ({exc}).",
+                  file=sys.stderr)
+        self._dirty = False
